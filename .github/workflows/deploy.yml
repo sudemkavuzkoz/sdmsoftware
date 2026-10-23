@@ -1,0 +1,33 @@
+name: CI/CD Build & Deploy - sdmsoftware.com.tr
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Kodu Çek
+        uses: actions/checkout@v4
+
+      - name: Node.js Kurulumu
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Bağımlılıkları Yükle
+        run: npm ci
+
+      - name: Lint Kontrolü
+        run: npm run lint
+
+      - name: Next.js Projesini Derle
+        run: npm run build
+
+      - name: Docker İmajını Hazırla
+        run: docker build -t sdmsoftware-platform:latest .
