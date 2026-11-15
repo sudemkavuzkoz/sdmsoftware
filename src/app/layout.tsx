@@ -12,15 +12,15 @@ export const metadata: Metadata = {
     default: 'SDM Software | Kurumsal Yazılım, E-Ticaret & Canlı Demo Platformu',
     template: '%s | SDM Software'
   },
-  description: 'sdmsoftware.com.tr - Kurumsal ERP, AI Chatbot, Finansal Analitik ve B2B e-ticaret sistemleri. Canlı sistem demolarını deneyimleyin, dijital yazılım lisanslarını güvenle satın alın.',
+  description: 'sdmsoftware.com.tr - AI Travel Planner, StockPred AI finansal tahmin, SDM Klinik, ADSP Protez Takip ve Veteriner Klinik sistemleri. Canlı sistem demolarını deneyimleyin ve dijital yazılım lisanslarını güvenle satın alın.',
   keywords: [
     'sdmsoftware.com.tr',
     'SDM Software',
-    'kurumsal yazılım satışı',
-    'erp yazılımı',
+    'AI Travel Planner',
+    'StockPred AI',
+    'ADSP Protez Takip',
+    'klinik yönetim sistemi',
     'canlı demo sistemleri',
-    'ai chatbot çözümleri',
-    'b2b e-ticaret',
     'yazılım lisansı satın al'
   ],
   authors: [{ name: 'SDM Software Engineering' }],
@@ -28,11 +28,16 @@ export const metadata: Metadata = {
   publisher: 'sdmsoftware.com.tr',
   openGraph: {
     title: 'SDM Software | Kurumsal Yazılım & Canlı Sistem Vitrini',
-    description: 'Yeni nesil yazılım çözümleri, e-ticaret platformları ve canlı interaktif sistem demoları.',
+    description: 'Yeni nesil yapay zeka yazılımları, sağlık otomasyonları ve canlı interaktif sistem demoları.',
     url: 'https://sdmsoftware.com.tr',
     siteName: 'SDM Software',
     locale: 'tr_TR',
     type: 'website'
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'SDM Software | Kurumsal Yazılım & Canlı Sistem Vitrini',
+    description: 'AI Travel Planner, StockPred AI ve klinik yönetim sistemleri canlı demo ve lisans mağazası.'
   },
   robots: {
     index: true,

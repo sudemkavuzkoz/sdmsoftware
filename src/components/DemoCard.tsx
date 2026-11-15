@@ -2,7 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Eye, Heart, Play, ExternalLink, ArrowRight, CheckCircle2, Shield } from 'lucide-react';
+import Image from 'next/image';
+import { Eye, Play, ExternalLink, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { DemoProject } from '@/lib/types';
 
 interface DemoCardProps {
@@ -13,6 +14,14 @@ interface DemoCardProps {
 export default function DemoCard({ demo, onOpenDemo }: DemoCardProps) {
   const getCategoryLabel = (cat: string) => {
     switch (cat) {
+      case 'travel_ai':
+        return 'Yapay Zeka & Seyahat';
+      case 'stock_prediction':
+        return 'Borsa Tahmin & FinTech';
+      case 'clinic_system':
+        return 'Klinik & Sağlık';
+      case 'automation':
+        return 'Kurumsal Otomasyon';
       case 'erp_crm':
         return 'Kurumsal ERP & CRM';
       case 'ai_bot':
@@ -32,10 +41,13 @@ export default function DemoCard({ demo, onOpenDemo }: DemoCardProps) {
 
       {/* Görsel ve Canlı Gösterge */}
       <div style={{ position: 'relative', height: '220px', overflow: 'hidden', background: '#090d16' }}>
-        <img
+        <Image
           src={demo.imageUrl}
           alt={demo.title}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          fill
+          sizes="(max-width: 768px) 100vw, 400px"
+          unoptimized
+          style={{ objectFit: 'cover' }}
         />
 
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(7, 9, 14, 0.95) 0%, rgba(7, 9, 14, 0.2) 60%, transparent 100%)' }} />

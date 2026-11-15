@@ -381,6 +381,16 @@ button, input, select, textarea {
   to { opacity: 1; transform: scale(1); }
 }
 
+/* Yükleniyor ikon dönüşü */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
 /* Sağdan Kayan Sepet Drawer */
 .drawer-overlay {
   position: fixed;
@@ -425,4 +435,10 @@ button, input, select, textarea {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #334155;
+}
+
+@media (max-width: 640px) {
+  .desktop-tagline {
+    display: none;
+  }
 }

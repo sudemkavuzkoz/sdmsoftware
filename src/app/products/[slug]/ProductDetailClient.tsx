@@ -2,20 +2,17 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { 
-  CheckCircle2, 
-  Star, 
-  ShoppingCart, 
-  ShieldCheck, 
-  Play, 
-  Download, 
-  Layers, 
-  ArrowLeft, 
-  FileCode, 
-  Cpu, 
+import Image from 'next/image';
+import {
+  CheckCircle2,
+  Star,
+  ShoppingCart,
+  ShieldCheck,
+  Play,
+  Download,
+  ArrowLeft,
   Clock,
-  Check,
-  ChevronDown
+  Check
 } from 'lucide-react';
 import { Product, DemoProject, LicenseTier } from '@/lib/types';
 import { useCart } from '@/context/CartContext';
@@ -81,10 +78,13 @@ export default function ProductDetailClient({
         <div>
           <div className="glass-card" style={{ height: '360px', overflow: 'hidden', marginBottom: '1.5rem', position: 'relative' }}>
             <div className="glow-accent" />
-            <img
+            <Image
               src={product.imageUrl}
               alt={product.title}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              fill
+              sizes="(max-width: 900px) 100vw, 600px"
+              unoptimized
+              style={{ objectFit: 'cover' }}
             />
             {product.badge && (
               <div style={{ position: 'absolute', top: '16px', left: '16px' }}>

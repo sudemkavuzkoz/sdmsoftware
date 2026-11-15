@@ -1,13 +1,23 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   ArrowLeft, Play, ShieldCheck, Key, CheckCircle2, ShoppingCart,
   Compass, TrendingUp, Activity, Sparkles, RefreshCw, Plus,
-  Star, Eye, Mail, Terminal, Zap, Clock, User, Phone
+  Star, Eye, Mail, Terminal, Zap, ExternalLink,
+  Stethoscope, PawPrint, ClipboardList
 } from 'lucide-react';
 import { DemoProject, Product } from '@/lib/types';
+import {
+  STOCK_DATA,
+  getProjectionBars,
+  PROTEZ_STAGES,
+  PROTEZ_STAGE_COLORS,
+  VET_STATUS_COLOR,
+  KNOWN_DEMO_SLUGS
+} from '@/lib/demoSimulations';
 
 interface DemoDetailClientProps {
   demo: DemoProject;
@@ -16,6 +26,22 @@ interface DemoDetailClientProps {
 
 export default function DemoDetailClient({ demo, linkedProduct }: DemoDetailClientProps) {
   const [activeTab, setActiveTab] = useState<'simulator' | 'features' | 'credentials'>('simulator');
+  const [simulatorActivePulse, setSimulatorActivePulse] = useState(false);
+  const simulatorRef = useRef<HTMLDivElement>(null);
+
+  const scrollToSimulator = () => {
+    setActiveTab('simulator');
+    setSimulatorActivePulse(true);
+    setTimeout(() => setSimulatorActivePulse(false), 2200);
+    if (demo.slug === 'ai-travel-planner-demo') {
+      setIsGenerating(true);
+      setTravelGenerated(false);
+      setTimeout(() => { setIsGenerating(false); setTravelGenerated(true); }, 650);
+    }
+    setTimeout(() => {
+      simulatorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  };
 
   // ── AI Travel Planner state ──────────────────────────────────────────
   const [travelCity, setTravelCity] = useState('Roma, İtalya');
@@ -36,17 +62,10 @@ export default function DemoDetailClient({ demo, linkedProduct }: DemoDetailClie
   const [selectedStock, setSelectedStock] = useState('THYAO.IS');
   const [selectedHorizon, setSelectedHorizon] = useState('1 Ay');
 
-  const stockDataMap: Record<string, { current: number; predicted: number; signal: string; rsi: number; sentiment: number; currency: string; change: number }> = {
-    'THYAO.IS': { current: 318.5, predicted: 364.2, signal: 'GÜÇLÜ AL', rsi: 58.4, sentiment: 88, currency: '₺', change: 2.4 },
-    'ASELS.IS': { current: 62.4,  predicted: 71.8,  signal: 'AL',        rsi: 54.1, sentiment: 84, currency: '₺', change: 1.1 },
-    'EREGL.IS': { current: 48.9,  predicted: 53.2,  signal: 'TUT',       rsi: 49.3, sentiment: 62, currency: '₺', change: -0.3 },
-    'AAPL':     { current: 232.0, predicted: 258.5, signal: 'GÜÇLÜ AL', rsi: 61.2, sentiment: 92, currency: '$', change: 1.8 },
-    'NVDA':     { current: 138.5, predicted: 162.0, signal: 'GÜÇLÜ AL', rsi: 67.8, sentiment: 95, currency: '$', change: 3.2 },
-  };
-  const sd = stockDataMap[selectedStock] || stockDataMap['THYAO.IS'];
+  const sd = STOCK_DATA[selectedStock] || STOCK_DATA['THYAO.IS'];
   const gain = (((sd.predicted - sd.current) / sd.current) * 100).toFixed(1);
   const signalColor = sd.signal.includes('GÜÇLÜ AL') ? 'var(--accent-emerald)' : sd.signal === 'AL' ? '#4ade80' : 'var(--accent-amber)';
-  const barData = [38, 44, 42, 52, 58, 55, 67, 76, 84, 94];
+  const barData = getProjectionBars(selectedStock, selectedHorizon);
 
   // ── Clinic state ─────────────────────────────────────────────────────
   const [clinicDoctor, setClinicDoctor] = useState('Dr. Selin Yılmaz (Dahiliye & Kardiyoloji)');
@@ -59,6 +78,67 @@ export default function DemoDetailClient({ demo, linkedProduct }: DemoDetailClie
     { id: 3, doctor: 'Dr. Meltem Akın', patient: 'Burak Demir', time: '14:00', status: 'Beklemede', color: 'var(--accent-amber)' },
   ]);
   const [smsAlert, setSmsAlert] = useState<string | null>(null);
+
+  // ── Protez Takip state ────────────────────────────────────────────────
+  const [protezPatient, setProtezPatient] = useState('');
+  const [protezType, setProtezType] = useState('Tam Protez (Üst Çene)');
+  const [protezDoctor, setProtezDoctor] = useState('Dr. Selin Yılmaz');
+  const [protezOrders, setProtezOrders] = useState([
+    { id: 1, patient: 'Ahmet Yıldız', type: 'Parsiyel Protez (Alt Çene)', doctor: 'Dr. Selin Yılmaz', stageIndex: 3, date: '12 Kas 2026' },
+    { id: 2, patient: 'Fatma Kara', type: 'Tam Protez (Üst Çene)', doctor: 'Dt. Caner Eren', stageIndex: 1, date: '11 Kas 2026' },
+    { id: 3, patient: 'Mehmet Demir', type: 'İmplant Üstü Protez', doctor: 'Dr. Selin Yılmaz', stageIndex: 4, date: '10 Kas 2026' },
+  ]);
+  const [protezAlert, setProtezAlert] = useState<string | null>(null);
+
+  const handleCreateProtezOrder = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!protezPatient) return;
+    setProtezOrders(prev => [
+      { id: Date.now(), patient: protezPatient, type: protezType, doctor: protezDoctor, stageIndex: 0, date: new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' }) },
+      ...prev
+    ]);
+    setProtezAlert(`${protezPatient} hastası için ${protezType} iş emri oluşturuldu. Laboratuvar bilgilendirildi. ✓`);
+    setProtezPatient('');
+    setTimeout(() => setProtezAlert(null), 5000);
+  };
+
+  const handleAdvanceProtezStage = (id: number) => {
+    setProtezOrders(prev =>
+      prev.map(o => o.id === id && o.stageIndex < PROTEZ_STAGES.length - 1 ? { ...o, stageIndex: o.stageIndex + 1 } : o)
+    );
+  };
+
+  // ── Veteriner Klinik state ───────────────────────────────────────────
+  const [vetPetName, setVetPetName] = useState('');
+  const [vetOwnerName, setVetOwnerName] = useState('');
+  const [vetPetType, setVetPetType] = useState('Köpek');
+  const [vetDoctor, setVetDoctor] = useState('Dr. Elif Arslan (Genel Cerrahi)');
+  const [vetTime, setVetTime] = useState('10:00');
+  const [vetAppointments, setVetAppointments] = useState([
+    { id: 1, petName: 'Boncuk', ownerName: 'Ayşe Demir', petType: 'Kedi', doctor: 'Dr. Elif Arslan', time: '09:00', status: 'Muayenede' },
+    { id: 2, petName: 'Max', ownerName: 'Kemal Öz', petType: 'Köpek', doctor: 'Dr. Can Yılmaz', time: '10:30', status: 'Beklemede' },
+    { id: 3, petName: 'Pamuk', ownerName: 'Zeynep Kaya', petType: 'Tavşan', doctor: 'Dr. Elif Arslan', time: '11:15', status: 'Tamamlandı' },
+  ]);
+  const [vetAlert, setVetAlert] = useState<string | null>(null);
+
+  const handleCreateVetAppointment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!vetPetName || !vetOwnerName) return;
+    setVetAppointments(prev => [
+      { id: Date.now(), petName: vetPetName, ownerName: vetOwnerName, petType: vetPetType, doctor: vetDoctor.split('(')[0].trim(), time: vetTime, status: 'Onaylandı' },
+      ...prev
+    ]);
+    setVetAlert(`${vetOwnerName} — ${vetPetName} (${vetPetType}) için saat ${vetTime} randevusu oluşturuldu. ✓ SMS bildirimi gönderildi.`);
+    setVetPetName('');
+    setVetOwnerName('');
+    setTimeout(() => setVetAlert(null), 5000);
+  };
+
+  const handleAdvanceVetStatus = (id: number) => {
+    setVetAppointments(prev =>
+      prev.map(a => a.id === id ? { ...a, status: a.status === 'Muayenede' ? 'Tamamlandı' : 'Muayenede' } : a)
+    );
+  };
 
   const handleCreateAppointment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,7 +218,7 @@ export default function DemoDetailClient({ demo, linkedProduct }: DemoDetailClie
               {/* CTA butonları */}
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <button
-                  onClick={() => setActiveTab('simulator')}
+                  onClick={scrollToSimulator}
                   className="btn btn-primary"
                   style={{ fontSize: '0.92rem' }}
                 >
@@ -171,8 +251,15 @@ export default function DemoDetailClient({ demo, linkedProduct }: DemoDetailClie
 
             {/* Sağ: Demo görsel */}
             <div style={{ flex: '0 0 auto', width: 'clamp(280px,35%,420px)', position: 'relative' }}>
-              <div style={{ borderRadius: 'var(--radius-lg)', overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,240,255,0.12)', position: 'relative' }}>
-                <img src={demo.imageUrl} alt={demo.title} style={{ width: '100%', height: '220px', objectFit: 'cover' }} />
+              <div style={{ height: '220px', borderRadius: 'var(--radius-lg)', overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,240,255,0.12)', position: 'relative' }}>
+                <Image
+                  src={demo.imageUrl}
+                  alt={demo.title}
+                  fill
+                  sizes="(max-width: 900px) 100vw, 420px"
+                  unoptimized
+                  style={{ objectFit: 'cover' }}
+                />
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(7,9,14,0.85) 0%, transparent 60%)' }} />
                 <div style={{ position: 'absolute', bottom: '16px', left: '16px', right: '16px' }}>
                   <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
@@ -216,15 +303,31 @@ export default function DemoDetailClient({ demo, linkedProduct }: DemoDetailClie
       </div>
 
       {/* ── TAB CONTENT ─────────────────────────────────────────────── */}
-      <div className="container" style={{ padding: '2.5rem 0 5rem' }}>
+      <div
+        ref={simulatorRef}
+        className="container"
+        style={{ padding: '2.5rem 0 5rem', scrollMarginTop: '115px' }}
+      >
 
         {/* ── SIMULATOR TAB ───────────────────────────────────────────── */}
         {activeTab === 'simulator' && (
-          <div>
+          <div
+            style={{
+              borderRadius: 'var(--radius-xl)',
+              transition: 'box-shadow 0.4s ease',
+              boxShadow: simulatorActivePulse ? '0 0 0 2px var(--primary), 0 0 32px rgba(0,240,255,0.2)' : 'none',
+              padding: simulatorActivePulse ? '0.75rem' : '0',
+            }}
+          >
+            {simulatorActivePulse && (
+              <div style={{ background: 'rgba(0,240,255,0.08)', border: '1px solid rgba(0,240,255,0.3)', borderRadius: 'var(--radius-md)', padding: '0.65rem 1rem', marginBottom: '1.25rem', fontSize: '0.82rem', color: 'var(--primary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Zap size={15} /> Canlı simülasyon başlatıldı — aşağıdaki kontrollerle anlık test edebilirsiniz.
+              </div>
+            )}
 
             {/* ══ AI TRAVEL PLANNER ══════════════════════════════════ */}
             {demo.slug === 'ai-travel-planner-demo' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '1.75rem', alignItems: 'start' }}>
+              <div className="sim-split-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '1.75rem', alignItems: 'start' }}>
                 {/* Form Paneli */}
                 <div>
                   <div style={{ marginBottom: '1.25rem' }}>
@@ -429,7 +532,7 @@ export default function DemoDetailClient({ demo, linkedProduct }: DemoDetailClie
                   <div style={{ display: 'flex', alignItems: 'flex-end', height: '130px', gap: '0.4rem', background: 'rgba(0,0,0,0.25)', padding: '1rem', borderRadius: 'var(--radius-md)', position: 'relative' }}>
                     {/* Yatay çizgiler */}
                     {[25, 50, 75].map(p => (
-                      <div key={p} style={{ position: 'absolute', left: '1rem', right: '1rem', borderTop: '1px solid rgba(255,255,255,0.04)', bottom: `calc(${p}% + 1rem)' ` }} />
+                      <div key={p} style={{ position: 'absolute', left: '1rem', right: '1rem', borderTop: '1px solid rgba(255,255,255,0.04)', bottom: `calc(${p}% + 1rem)` }} />
                     ))}
                     {barData.map((val, idx) => (
                       <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end' }}>
@@ -490,7 +593,7 @@ export default function DemoDetailClient({ demo, linkedProduct }: DemoDetailClie
 
             {/* ══ SDM KLİNİK ══════════════════════════════════════════ */}
             {demo.slug === 'sdm-clinic-system-demo' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '1.75rem', alignItems: 'start' }}>
+              <div className="sim-split-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '1.75rem', alignItems: 'start' }}>
                 {/* Form */}
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
@@ -570,8 +673,8 @@ export default function DemoDetailClient({ demo, linkedProduct }: DemoDetailClie
                             display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
                             fontSize: '0.68rem', fontWeight: 700, padding: '0.18rem 0.5rem',
                             borderRadius: 'var(--radius-full)',
-                            background: `${a.color}18`, color: a.color,
-                            border: `1px solid ${a.color}40`
+                            background: `color-mix(in srgb, ${a.color} 15%, transparent)`, color: a.color,
+                            border: `1px solid color-mix(in srgb, ${a.color} 40%, transparent)`
                           }}>
                             <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: a.color }} />
                             {a.status}
@@ -595,6 +698,305 @@ export default function DemoDetailClient({ demo, linkedProduct }: DemoDetailClie
                     ))}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* ══ PROTEZ TAKİP SİSTEMİ ═══════════════════════════════ */}
+            {demo.slug === 'protez-takip-sistemi-demo' && (
+              <div className="sim-split-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '1.75rem', alignItems: 'start' }}>
+                {/* Form */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                    <Stethoscope size={20} color="var(--primary)" />
+                    <h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Yeni Protez İş Emri</h2>
+                  </div>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '1.25rem' }}>
+                    Hasta bilgisi ve protez türünü seçin — iş emri laboratuvara iletilsin, ardından aşamaları ilerletin.
+                  </p>
+
+                  {protezAlert && (
+                    <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid var(--accent-emerald)', borderRadius: 'var(--radius-md)', padding: '0.85rem 1rem', marginBottom: '1rem', fontSize: '0.8rem', color: 'var(--accent-emerald)', display: 'flex', gap: '0.5rem' }}>
+                      <span>📋</span><span>{protezAlert}</span>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleCreateProtezOrder} style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div>
+                      <label className="form-label">👤 Hasta Adı Soyadı</label>
+                      <input type="text" required placeholder="örn: Ali Vural" value={protezPatient}
+                        onChange={e => setProtezPatient(e.target.value)} className="form-input" />
+                    </div>
+                    <div>
+                      <label className="form-label">🦷 Protez Türü</label>
+                      <select value={protezType} onChange={e => setProtezType(e.target.value)} className="form-select">
+                        <option>Tam Protez (Üst Çene)</option>
+                        <option>Tam Protez (Alt Çene)</option>
+                        <option>Parsiyel Protez (Alt Çene)</option>
+                        <option>Parsiyel Protez (Üst Çene)</option>
+                        <option>İmplant Üstü Protez</option>
+                        <option>Kron & Köprü</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="form-label">👨‍⚕️ Hekim</label>
+                      <select value={protezDoctor} onChange={e => setProtezDoctor(e.target.value)} className="form-select">
+                        <option>Dr. Selin Yılmaz</option>
+                        <option>Dt. Caner Eren</option>
+                        <option>Dr. Meltem Akın</option>
+                      </select>
+                    </div>
+                    <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
+                      <ClipboardList size={15} /> İş Emri Oluştur & Laboratuvara Gönder
+                    </button>
+                  </form>
+                </div>
+
+                {/* İş Emri Listesi */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                    <h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>📋 Protez İş Emri Takip Paneli</h2>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                    {protezOrders.map((o, idx) => {
+                      const done = o.stageIndex === PROTEZ_STAGES.length - 1;
+                      const stageColor = PROTEZ_STAGE_COLORS[o.stageIndex];
+                      return (
+                        <div key={o.id} style={{
+                          background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)',
+                          border: '1px solid var(--border-subtle)', padding: '1.15rem 1.25rem',
+                          animation: idx === 0 && protezOrders.length > 3 ? 'fadeIn 0.4s ease' : 'none'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.85rem' }}>
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                                <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>{o.patient}</span>
+                                <span style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                                  fontSize: '0.68rem', fontWeight: 700, padding: '0.18rem 0.55rem',
+                                  borderRadius: 'var(--radius-full)',
+                                  background: `color-mix(in srgb, ${stageColor} 15%, transparent)`, color: stageColor,
+                                  border: `1px solid color-mix(in srgb, ${stageColor} 40%, transparent)`
+                                }}>
+                                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: stageColor }} />
+                                  {PROTEZ_STAGES[o.stageIndex]}
+                                </span>
+                              </div>
+                              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                                {o.type} · {o.doctor} · {o.date}
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleAdvanceProtezStage(o.id)}
+                              disabled={done}
+                              className={`btn btn-sm ${done ? 'btn-secondary' : 'btn-purple'}`}
+                              style={{ fontSize: '0.75rem', padding: '0.38rem 0.8rem', opacity: done ? 0.6 : 1, cursor: done ? 'default' : 'pointer' }}
+                            >
+                              {done ? <><CheckCircle2 size={13} /> Teslim Edildi</> : <>Sonraki Aşama →</>}
+                            </button>
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '0.35rem' }}>
+                            {PROTEZ_STAGES.map((s, i) => (
+                              <div key={s} style={{ flex: 1 }}>
+                                <div style={{
+                                  height: '6px', borderRadius: 'var(--radius-full)',
+                                  background: i <= o.stageIndex
+                                    ? (done ? 'var(--accent-emerald)' : 'linear-gradient(90deg, #6366f1, #00f0ff)')
+                                    : 'rgba(255,255,255,0.08)',
+                                  transition: 'background 0.4s ease'
+                                }} />
+                                <div style={{
+                                  fontSize: '0.65rem', marginTop: '0.3rem', textAlign: 'center',
+                                  color: i === o.stageIndex ? 'var(--primary)' : 'var(--text-dim)',
+                                  fontWeight: i === o.stageIndex ? 700 : 400
+                                }}>
+                                  {s}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* İstatistik Kartları */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.75rem', marginTop: '1rem' }}>
+                    {[
+                      { label: 'Toplam Sipariş', value: protezOrders.length, color: 'var(--primary)' },
+                      { label: 'Devam Eden', value: protezOrders.filter(o => o.stageIndex < PROTEZ_STAGES.length - 1).length, color: 'var(--accent-amber)' },
+                      { label: 'Teslim Edilen', value: protezOrders.filter(o => o.stageIndex === PROTEZ_STAGES.length - 1).length, color: 'var(--accent-emerald)' },
+                    ].map(s => (
+                      <div key={s.label} style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', padding: '1rem', textAlign: 'center' }}>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: s.color }}>{s.value}</div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: '0.2rem' }}>{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ══ VETERİNER KLİNİK ═══════════════════════════════════ */}
+            {demo.slug === 'veteriner-klinik-demo' && (
+              <div className="sim-split-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '1.75rem', alignItems: 'start' }}>
+                {/* Form */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                    <PawPrint size={20} color="var(--primary)" />
+                    <h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Yeni Veteriner Randevusu</h2>
+                  </div>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '1.25rem' }}>
+                    Pet sahibi ve evcil hayvan bilgilerini girin — hekim panelinde muayene durumunu yönetin.
+                  </p>
+
+                  {vetAlert && (
+                    <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid var(--accent-emerald)', borderRadius: 'var(--radius-md)', padding: '0.85rem 1rem', marginBottom: '1rem', fontSize: '0.8rem', color: 'var(--accent-emerald)', display: 'flex', gap: '0.5rem' }}>
+                      <span>🐾</span><span>{vetAlert}</span>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleCreateVetAppointment} style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div>
+                      <label className="form-label">👤 Pet Sahibi Adı</label>
+                      <input type="text" required placeholder="örn: Ayşe Demir" value={vetOwnerName}
+                        onChange={e => setVetOwnerName(e.target.value)} className="form-input" />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                      <div>
+                        <label className="form-label">🐾 Evcil Hayvan Adı</label>
+                        <input type="text" required placeholder="örn: Boncuk" value={vetPetName}
+                          onChange={e => setVetPetName(e.target.value)} className="form-input" />
+                      </div>
+                      <div>
+                        <label className="form-label">🐕 Tür</label>
+                        <select value={vetPetType} onChange={e => setVetPetType(e.target.value)} className="form-select">
+                          <option>Köpek</option>
+                          <option>Kedi</option>
+                          <option>Kuş</option>
+                          <option>Tavşan</option>
+                          <option>Hamster</option>
+                          <option>Diğer</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                      <div>
+                        <label className="form-label">👨‍⚕️ Veteriner Hekim</label>
+                        <select value={vetDoctor} onChange={e => setVetDoctor(e.target.value)} className="form-select">
+                          <option>Dr. Elif Arslan (Genel Cerrahi)</option>
+                          <option>Dr. Can Yılmaz (İç Hastalıkları)</option>
+                          <option>Dr. Deniz Öztürk (Dermatoloji)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="form-label">⏰ Randevu Saati</label>
+                        <select value={vetTime} onChange={e => setVetTime(e.target.value)} className="form-select">
+                          {['09:00','09:30','10:00','10:30','11:00','11:15','14:00','14:30','15:00','16:00','16:30'].map(t => (
+                            <option key={t}>{t}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
+                      <PawPrint size={15} /> Randevu Oluştur & SMS Bildir
+                    </button>
+                  </form>
+                </div>
+
+                {/* Randevu Listesi */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                    <h2 style={{ fontSize: '1.1rem', fontWeight: 800 }}>🐾 Günün Veteriner Randevuları</h2>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>{new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                  </div>
+
+                  <div style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)', overflowX: 'auto' }}>
+                    <div style={{ minWidth: '540px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '60px 1.1fr 1fr 0.9fr 105px 115px', padding: '0.65rem 1.25rem', background: 'var(--bg-elevated)', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        <div>SAAT</div><div>HASTA / PET</div><div>SAHİBİ</div><div>HEKİM</div><div>DURUM</div><div style={{ textAlign: 'right' }}>İŞLEM</div>
+                      </div>
+
+                      {vetAppointments.map((a, idx) => {
+                        const statusColor = VET_STATUS_COLOR[a.status] || 'var(--primary)';
+                        return (
+                          <div key={a.id} style={{
+                            display: 'grid', gridTemplateColumns: '60px 1.1fr 1fr 0.9fr 105px 115px',
+                            padding: '0.85rem 1.25rem', alignItems: 'center',
+                            borderTop: idx > 0 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                            transition: 'background 0.2s',
+                            animation: idx === 0 && vetAppointments.length > 3 ? 'fadeIn 0.4s ease' : 'none'
+                          }}>
+                            <div style={{ fontWeight: 800, color: 'var(--primary)', fontFamily: 'var(--font-mono)', fontSize: '0.88rem' }}>{a.time}</div>
+                            <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>
+                              🐾 {a.petName} <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', fontWeight: 400 }}>({a.petType})</span>
+                            </div>
+                            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{a.ownerName}</div>
+                            <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{a.doctor}</div>
+                            <div>
+                              <span style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                                fontSize: '0.68rem', fontWeight: 700, padding: '0.18rem 0.5rem',
+                                borderRadius: 'var(--radius-full)',
+                                background: `color-mix(in srgb, ${statusColor} 15%, transparent)`, color: statusColor,
+                                border: `1px solid color-mix(in srgb, ${statusColor} 40%, transparent)`
+                              }}>
+                                <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: statusColor }} />
+                                {a.status}
+                              </span>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              {a.status !== 'Tamamlandı' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleAdvanceVetStatus(a.id)}
+                                  className="btn btn-secondary btn-sm"
+                                  style={{ fontSize: '0.7rem', padding: '0.25rem 0.6rem' }}
+                                >
+                                  {a.status === 'Muayenede' ? 'Tamamla' : 'Muayeneye Al'}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* İstatistik Kartları */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.75rem', marginTop: '1rem' }}>
+                    {[
+                      { label: 'Toplam Randevu', value: vetAppointments.length, color: 'var(--primary)' },
+                      { label: 'Muayenede', value: vetAppointments.filter(a => a.status === 'Muayenede').length, color: 'var(--accent-emerald)' },
+                      { label: 'Beklemede', value: vetAppointments.filter(a => a.status === 'Beklemede').length, color: 'var(--accent-amber)' },
+                    ].map(s => (
+                      <div key={s.label} style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', padding: '1rem', textAlign: 'center' }}>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: s.color }}>{s.value}</div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: '0.2rem' }}>{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ══ YEDEK GÖRÜNÜM (ÖZEL DEMOLAR İÇİN) ═════════════════ */}
+            {!KNOWN_DEMO_SLUGS.includes(demo.slug as (typeof KNOWN_DEMO_SLUGS)[number]) && (
+              <div style={{ textAlign: 'center', padding: '3rem 1.5rem', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)' }}>
+                <Sparkles size={32} color="var(--primary)" style={{ marginBottom: '0.75rem' }} />
+                <h2 style={{ fontSize: '1.15rem', fontWeight: 800, marginBottom: '0.5rem' }}>{demo.title}</h2>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '1.25rem' }}>
+                  Bu demonun canlı arayüzünü yeni sekmede açarak inceleyebilirsiniz.
+                </p>
+                {demo.liveUrl && (
+                  <a href={demo.liveUrl} target="_blank" rel="noreferrer" className="btn btn-primary btn-sm">
+                    <ExternalLink size={14} /> Canlı Sistemi Aç
+                  </a>
+                )}
               </div>
             )}
           </div>
@@ -677,6 +1079,9 @@ export default function DemoDetailClient({ demo, linkedProduct }: DemoDetailClie
         @keyframes fadeIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @media (max-width: 900px) {
+          .sim-split-grid { grid-template-columns: 1fr !important; }
+        }
       `}</style>
     </div>
   );

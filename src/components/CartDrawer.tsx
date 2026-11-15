@@ -150,6 +150,8 @@ export default function CartDrawer() {
                     {/* Adet Butonları */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(0,0,0,0.3)', borderRadius: 'var(--radius-sm)', padding: '0.2rem 0.4rem' }}>
                       <button
+                        type="button"
+                        aria-label="Adet azalt"
                         onClick={() => updateQuantity(item.product.id, item.licenseTier, item.quantity - 1)}
                         style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}
                       >
@@ -159,6 +161,8 @@ export default function CartDrawer() {
                         {item.quantity}
                       </span>
                       <button
+                        type="button"
+                        aria-label="Adet artır"
                         onClick={() => updateQuantity(item.product.id, item.licenseTier, item.quantity + 1)}
                         style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}
                       >
@@ -209,7 +213,7 @@ export default function CartDrawer() {
               {couponCode && (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--accent-emerald)', marginTop: '0.35rem' }}>
                   <span>Kupon Uygulandı: <strong>{couponCode}</strong></span>
-                  <button onClick={removeCoupon} style={{ background: 'none', border: 'none', color: 'var(--accent-rose)', cursor: 'pointer', fontSize: '0.72rem', textDecoration: 'underline' }}>
+                  <button type="button" onClick={removeCoupon} style={{ background: 'none', border: 'none', color: 'var(--accent-rose)', cursor: 'pointer', fontSize: '0.72rem', textDecoration: 'underline' }}>
                     Kaldır
                   </button>
                 </div>

@@ -1,7 +1,5 @@
 import React from 'react';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Play, ShieldCheck, ExternalLink, Key, CheckCircle2 } from 'lucide-react';
 import { db } from '@/lib/db';
 import DemoDetailClient from './DemoDetailClient';
 

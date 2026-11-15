@@ -1,7 +1,65 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useSyncExternalStore } from 'react';
 import { Product, CartItem, LicenseTier } from '@/lib/types';
+
+const CART_STORAGE_KEY = 'sdm_cart';
+const CART_CHANGE_EVENT = 'sdm-cart-change';
+const EMPTY_CART: CartItem[] = [];
+
+let cachedCartRaw: string | null | undefined;
+let cachedCartItems: CartItem[] = EMPTY_CART;
+
+function subscribeCart(listener: () => void) {
+  if (typeof window === 'undefined') return () => {};
+  const handler = () => listener();
+  window.addEventListener(CART_CHANGE_EVENT, handler);
+  window.addEventListener('storage', handler);
+  return () => {
+    window.removeEventListener(CART_CHANGE_EVENT, handler);
+    window.removeEventListener('storage', handler);
+  };
+}
+
+function getCartSnapshot(): CartItem[] {
+  if (typeof window === 'undefined') return EMPTY_CART;
+  try {
+    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    if (raw === cachedCartRaw) {
+      return cachedCartItems;
+    }
+    cachedCartRaw = raw;
+    if (!raw) {
+      cachedCartItems = EMPTY_CART;
+      return cachedCartItems;
+    }
+    const parsed = JSON.parse(raw);
+    cachedCartItems = Array.isArray(parsed) ? parsed : EMPTY_CART;
+    return cachedCartItems;
+  } catch {
+    cachedCartItems = EMPTY_CART;
+    return cachedCartItems;
+  }
+}
+
+function getCartServerSnapshot(): CartItem[] {
+  return EMPTY_CART;
+}
+
+function updateStoredCart(updater: (prev: CartItem[]) => CartItem[]) {
+  const next = updater(getCartSnapshot());
+  try {
+    const serialized = JSON.stringify(next);
+    localStorage.setItem(CART_STORAGE_KEY, serialized);
+    cachedCartRaw = serialized;
+    cachedCartItems = next;
+  } catch {
+    cachedCartItems = next;
+  }
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(CART_CHANGE_EVENT));
+  }
+}
 
 interface CartContextType {
   items: CartItem[];
@@ -25,30 +83,14 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const items = useSyncExternalStore(
+    subscribeCart,
+    getCartSnapshot,
+    getCartServerSnapshot
+  );
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [discountRate, setDiscountRate] = useState(0);
-
-  // localStorage Senkronizasyonu
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('sdm_cart');
-      if (saved) {
-        setItems(JSON.parse(saved));
-      }
-    } catch {
-      // LocalStorage okuma hatası yok sayılır
-    }
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('sdm_cart', JSON.stringify(items));
-    } catch {
-      // Hata yok sayılır
-    }
-  }, [items]);
 
   const calculateTierPrice = (basePrice: number, tier: LicenseTier): number => {
     switch (tier) {
@@ -66,15 +108,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const addToCart = (product: Product, licenseTier: LicenseTier = 'standard') => {
     const unitPrice = calculateTierPrice(product.price, licenseTier);
 
-    setItems(prev => {
+    updateStoredCart(prev => {
       const existingIdx = prev.findIndex(
         i => i.product.id === product.id && i.licenseTier === licenseTier
       );
 
       if (existingIdx > -1) {
-        const copy = [...prev];
-        copy[existingIdx].quantity += 1;
-        return copy;
+        return prev.map((item, idx) =>
+          idx === existingIdx ? { ...item, quantity: item.quantity + 1 } : item
+        );
       }
 
       return [...prev, { product, licenseTier, unitPrice, quantity: 1 }];
@@ -84,7 +126,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const removeFromCart = (productId: string, licenseTier: LicenseTier) => {
-    setItems(prev => prev.filter(i => !(i.product.id === productId && i.licenseTier === licenseTier)));
+    updateStoredCart(prev =>
+      prev.filter(i => !(i.product.id === productId && i.licenseTier === licenseTier))
+    );
   };
 
   const updateQuantity = (productId: string, licenseTier: LicenseTier, quantity: number) => {
@@ -92,7 +136,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       removeFromCart(productId, licenseTier);
       return;
     }
-    setItems(prev =>
+    updateStoredCart(prev =>
       prev.map(item =>
         item.product.id === productId && item.licenseTier === licenseTier
           ? { ...item, quantity }
@@ -102,7 +146,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const clearCart = () => {
-    setItems([]);
+    updateStoredCart(() => EMPTY_CART);
     setCouponCode('');
     setDiscountRate(0);
   };

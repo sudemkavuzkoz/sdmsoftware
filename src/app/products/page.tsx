@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, SlidersHorizontal, Sparkles } from 'lucide-react';
+import { Search, SlidersHorizontal } from 'lucide-react';
 import { db } from '@/lib/db';
-import { Product, ProductCategory, DemoProject } from '@/lib/types';
+import { DemoProject } from '@/lib/types';
 import ProductCard from '@/components/ProductCard';
 import LiveDemoModal from '@/components/LiveDemoModal';
 
@@ -16,9 +16,9 @@ export default function ProductsPage() {
 
   const categories = [
     { id: 'all', label: 'Tüm Ürünler' },
-    { id: 'saas', label: 'AI Travel Planner & SaaS' },
+    { id: 'saas', label: 'Yapay Zeka & SaaS' },
     { id: 'webapp', label: 'Borsa Tahmin & FinTech' },
-    { id: 'enterprise', label: 'SDM Klinik & Sağlık' },
+    { id: 'enterprise', label: 'Klinik & Sağlık Sistemleri' },
     { id: 'trendyol', label: '🧡 Trendyol Mağaza Ürünleri' }
   ];
 

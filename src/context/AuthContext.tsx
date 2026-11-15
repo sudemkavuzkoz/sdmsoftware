@@ -1,13 +1,91 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useSyncExternalStore } from 'react';
 import { User } from '@/lib/types';
 
 const DEFAULT_ADMIN_PASSWORD = 'sudem2026';
+const AUTH_CHANGE_EVENT = 'sdm-auth-change';
+
+const DEFAULT_GUEST_USER: User = {
+  id: 'usr-demo-default',
+  name: 'Ziyaretçi',
+  email: 'ziyaretci@sdmsoftware.com.tr',
+  role: 'customer',
+  company: 'SDM Ziyaretçisi',
+  createdAt: '2026-01-01T00:00:00Z'
+};
+
+interface AuthSnapshot {
+  user: User | null;
+  isAdmin: boolean;
+}
+
+const EMPTY_AUTH_SNAPSHOT: AuthSnapshot = { user: null, isAdmin: false };
+const GUEST_AUTH_SNAPSHOT: AuthSnapshot = { user: DEFAULT_GUEST_USER, isAdmin: false };
+
+let isLoggedOutSession = false;
+let cachedRawUser: string | null | undefined;
+let cachedRawAdmin: string | null | undefined;
+let cachedAuthSnapshot: AuthSnapshot = EMPTY_AUTH_SNAPSHOT;
+
+function subscribeAuth(listener: () => void) {
+  if (typeof window === 'undefined') return () => {};
+  const handler = () => listener();
+  window.addEventListener(AUTH_CHANGE_EVENT, handler);
+  window.addEventListener('storage', handler);
+  return () => {
+    window.removeEventListener(AUTH_CHANGE_EVENT, handler);
+    window.removeEventListener('storage', handler);
+  };
+}
+
+function getAuthSnapshot(): AuthSnapshot {
+  if (typeof window === 'undefined' || isLoggedOutSession) {
+    return EMPTY_AUTH_SNAPSHOT;
+  }
+  try {
+    const rawUser = localStorage.getItem('sdm_auth_user');
+    const rawAdmin = localStorage.getItem('sdm_admin_session');
+    if (rawUser === cachedRawUser && rawAdmin === cachedRawAdmin) {
+      return cachedAuthSnapshot;
+    }
+
+    cachedRawUser = rawUser;
+    cachedRawAdmin = rawAdmin;
+
+    if (!rawUser) {
+      cachedAuthSnapshot = GUEST_AUTH_SNAPSHOT;
+      return cachedAuthSnapshot;
+    }
+
+    const parsed = JSON.parse(rawUser) as User;
+    const isValidAdmin = parsed.role === 'admin' && rawAdmin === 'true';
+    cachedAuthSnapshot = {
+      user: isValidAdmin ? parsed : { ...parsed, role: 'customer' },
+      isAdmin: isValidAdmin
+    };
+    return cachedAuthSnapshot;
+  } catch {
+    cachedAuthSnapshot = GUEST_AUTH_SNAPSHOT;
+    return cachedAuthSnapshot;
+  }
+}
+
+function getAuthServerSnapshot(): AuthSnapshot {
+  return EMPTY_AUTH_SNAPSHOT;
+}
+
+function emitAuthChange() {
+  cachedRawUser = undefined;
+  cachedRawAdmin = undefined;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
+  }
+}
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, name?: string, role?: 'customer' | 'admin') => void;
+  login: (email: string, name?: string, role?: 'customer' | 'admin', company?: string) => void;
   loginAsAdmin: (password: string) => { success: boolean; message?: string };
   changeAdminPassword: (currentPass: string, newPass: string) => { success: boolean; message: string };
   logout: () => void;
@@ -18,44 +96,18 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { user, isAdmin } = useSyncExternalStore(
+    subscribeAuth,
+    getAuthSnapshot,
+    getAuthServerSnapshot
+  );
 
-  useEffect(() => {
-    try {
-      const savedUser = localStorage.getItem('sdm_auth_user');
-      const hasAdminSession = localStorage.getItem('sdm_admin_session') === 'true';
-
-      if (savedUser) {
-        const parsed = JSON.parse(savedUser);
-        if (parsed.role === 'admin' && hasAdminSession) {
-          setUser(parsed);
-          setIsAdmin(true);
-        } else {
-          // Admin session yoksa müşteri olarak başlat
-          parsed.role = 'customer';
-          setUser(parsed);
-          setIsAdmin(false);
-        }
-      } else {
-        const defaultUser: User = {
-          id: 'usr-demo-default',
-          name: 'Ziyaretçi',
-          email: 'ziyaretci@sdmsoftware.com.tr',
-          role: 'customer',
-          company: 'SDM Ziyaretçisi',
-          createdAt: new Date().toISOString()
-        };
-        setUser(defaultUser);
-        localStorage.setItem('sdm_auth_user', JSON.stringify(defaultUser));
-        setIsAdmin(false);
-      }
-    } catch {
-      setIsAdmin(false);
-    }
-  }, []);
-
-  const login = (email: string, name: string = 'Kullanıcı', role: 'customer' | 'admin' = 'customer') => {
+  const login = (
+    email: string,
+    name: string = 'Kullanıcı',
+    role: 'customer' | 'admin' = 'customer',
+    company: string = 'Kurumsal Müşteri'
+  ) => {
     // Normal login asla admin yapamaz, admin için loginAsAdmin çağrılmalıdır
     const safeRole = role === 'admin' ? 'customer' : role;
     const newUser: User = {
@@ -63,15 +115,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       name,
       email,
       role: safeRole,
-      company: 'Kurumsal Müşteri',
+      company,
       createdAt: new Date().toISOString()
     };
-    setUser(newUser);
-    setIsAdmin(false);
+    isLoggedOutSession = false;
     try {
       localStorage.setItem('sdm_auth_user', JSON.stringify(newUser));
       localStorage.removeItem('sdm_admin_session');
-    } catch {}
+    } catch {
+      // Depolama erişim hatası yok sayılır
+    }
+    emitAuthChange();
   };
 
   const loginAsAdmin = (password: string): { success: boolean; message?: string } => {
@@ -79,7 +133,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const customPass = localStorage.getItem('sdm_admin_secret_pwd');
       if (customPass) savedPass = customPass;
-    } catch {}
+    } catch {
+      // Varsayılan şifre ile devam edilir
+    }
 
     if (password.trim() === savedPass) {
       const adminUser: User = {
@@ -90,12 +146,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         company: 'SDM Software HQ',
         createdAt: '2026-01-01T00:00:00Z'
       };
-      setUser(adminUser);
-      setIsAdmin(true);
+      isLoggedOutSession = false;
       try {
         localStorage.setItem('sdm_auth_user', JSON.stringify(adminUser));
         localStorage.setItem('sdm_admin_session', 'true');
-      } catch {}
+      } catch {
+        // Depolama erişim hatası yok sayılır
+      }
+      emitAuthChange();
       return { success: true };
     }
 
@@ -110,7 +168,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const custom = localStorage.getItem('sdm_admin_secret_pwd');
       if (custom) savedPass = custom;
-    } catch {}
+    } catch {
+      // Varsayılan şifre ile devam edilir
+    }
 
     if (currentPass.trim() !== savedPass) {
       return { success: false, message: 'Mevcut yönetici şifreniz hatalı.' };
@@ -129,12 +189,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    setUser(null);
-    setIsAdmin(false);
+    isLoggedOutSession = true;
     try {
       localStorage.removeItem('sdm_auth_user');
       localStorage.removeItem('sdm_admin_session');
-    } catch {}
+    } catch {
+      // Depolama erişim hatası yok sayılır
+    }
+    emitAuthChange();
   };
 
   return (
@@ -161,4 +223,3 @@ export function useAuth() {
   }
   return context;
 }
-

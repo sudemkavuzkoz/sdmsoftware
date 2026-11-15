@@ -1,19 +1,5 @@
 import React from 'react';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { 
-  CheckCircle2, 
-  Star, 
-  ShoppingCart, 
-  ShieldCheck, 
-  Play, 
-  Download, 
-  Layers, 
-  ArrowLeft, 
-  FileCode, 
-  Cpu, 
-  Clock 
-} from 'lucide-react';
 import { db } from '@/lib/db';
 import ProductDetailClient from './ProductDetailClient';
 

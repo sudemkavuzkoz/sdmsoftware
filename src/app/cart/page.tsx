@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ShoppingBag, ArrowRight, Trash2, Plus, Minus, Tag, ShieldCheck } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 
@@ -81,10 +82,13 @@ export default function CartPage() {
                   }}
                 >
                   <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <img
+                    <Image
                       src={item.product.imageUrl}
                       alt={item.product.title}
-                      style={{ width: '70px', height: '60px', objectFit: 'cover', borderRadius: 'var(--radius-sm)' }}
+                      width={70}
+                      height={60}
+                      unoptimized
+                      style={{ objectFit: 'cover', borderRadius: 'var(--radius-sm)' }}
                     />
                     <div>
                       <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>
@@ -102,6 +106,8 @@ export default function CartPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(0,0,0,0.3)', padding: '0.25rem 0.5rem', borderRadius: 'var(--radius-sm)' }}>
                       <button
+                        type="button"
+                        aria-label="Adet azalt"
                         onClick={() => updateQuantity(item.product.id, item.licenseTier, item.quantity - 1)}
                         style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}
                       >
@@ -111,6 +117,8 @@ export default function CartPage() {
                         {item.quantity}
                       </span>
                       <button
+                        type="button"
+                        aria-label="Adet artır"
                         onClick={() => updateQuantity(item.product.id, item.licenseTier, item.quantity + 1)}
                         style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex' }}
                       >
@@ -123,6 +131,8 @@ export default function CartPage() {
                     </div>
 
                     <button
+                      type="button"
+                      aria-label={`${item.product.title} ürününü sepetten çıkar`}
                       onClick={() => removeFromCart(item.product.id, item.licenseTier)}
                       style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '0.3rem' }}
                       onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-rose)')}
@@ -165,7 +175,7 @@ export default function CartPage() {
               {couponCode && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: 'var(--accent-emerald)', marginTop: '0.5rem' }}>
                   <span>Aktif Kupon: <strong>{couponCode}</strong></span>
-                  <button onClick={removeCoupon} style={{ background: 'none', border: 'none', color: 'var(--accent-rose)', cursor: 'pointer', fontSize: '0.75rem', textDecoration: 'underline' }}>
+                  <button type="button" onClick={removeCoupon} style={{ background: 'none', border: 'none', color: 'var(--accent-rose)', cursor: 'pointer', fontSize: '0.75rem', textDecoration: 'underline' }}>
                     Kaldır
                   </button>
                 </div>

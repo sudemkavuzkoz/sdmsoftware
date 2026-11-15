@@ -17,10 +17,8 @@ import {
   Eye, 
   RefreshCw,
   Globe,
-  Server,
   Copy,
   CheckCircle2,
-  Settings,
   Lock,
   EyeOff,
   AlertCircle,
@@ -32,7 +30,7 @@ import { Product, DemoProject, Order, ProductCategory, DemoCategory } from '@/li
 import { useAuth } from '@/context/AuthContext';
 
 export default function AdminPage() {
-  const { user, isAdmin, loginAsAdmin, logout, changeAdminPassword } = useAuth();
+  const { isAdmin, loginAsAdmin, logout, changeAdminPassword } = useAuth();
 
   // Şifre Giriş Durumu
   const [passwordInput, setPasswordInput] = useState('');
@@ -99,7 +97,7 @@ export default function AdminPage() {
   const [isAddDemoOpen, setIsAddDemoOpen] = useState(false);
   const [newDemoTitle, setNewDemoTitle] = useState('');
   const [newDemoCategory, setNewDemoCategory] = useState<DemoCategory>('travel_ai');
-  const [newDemoUrl, setNewDemoUrl] = useState('https://demo.sdmsoftware.com.tr/');
+  const [newDemoUrl, setNewDemoUrl] = useState('https://sdmsoftware.com.tr/demos');
   const [newDemoDesc, setNewDemoDesc] = useState('');
 
   // Kopyalama Durumu
@@ -203,7 +201,7 @@ export default function AdminPage() {
       shortDescription: newDemoDesc || 'Canlı sistem simülasyonu ve test ortamı.',
       fullDescription: newDemoDesc || 'Kapsamlı sistem mimarisi ve test senaryoları.',
       features: ['Canlı API testi', 'İzole sandbox ortamı', 'Yönetici yetkileri'],
-      techStack: ['Next.js 15', 'Docker', 'FastAPI'],
+      techStack: ['Next.js 16', 'Docker', 'FastAPI'],
       liveUrl: newDemoUrl,
       previewType: 'interactive_sandbox',
       status: 'active',
@@ -866,7 +864,7 @@ export default function AdminPage() {
                     <td style={{ padding: '1rem' }}>
                       <select
                         value={o.orderStatus}
-                        onChange={(e) => handleUpdateOrderStatus(o.id, e.target.value as any)}
+                        onChange={(e) => handleUpdateOrderStatus(o.id, e.target.value as Order['orderStatus'])}
                         className="form-select"
                         style={{ padding: '0.35rem 0.6rem', fontSize: '0.78rem' }}
                       >
@@ -912,7 +910,7 @@ export default function AdminPage() {
                   <label className="form-label">Kategori</label>
                   <select
                     value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value as any)}
+                    onChange={(e) => setNewCategory(e.target.value as ProductCategory)}
                     className="form-select"
                   >
                     <option value="saas">SaaS & Yapay Zeka</option>
@@ -994,7 +992,7 @@ export default function AdminPage() {
                   <label className="form-label">Kategori</label>
                   <select
                     value={newDemoCategory}
-                    onChange={(e) => setNewDemoCategory(e.target.value as any)}
+                    onChange={(e) => setNewDemoCategory(e.target.value as DemoCategory)}
                     className="form-select"
                   >
                     <option value="travel_ai">AI Travel Planner</option>

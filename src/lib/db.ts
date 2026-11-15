@@ -21,7 +21,7 @@ const INITIAL_PRODUCTS: Product[] = [
       'Restoran, otel ve turistik mekan puanlama entegrasyonu',
       'Tek tıkla PDF ve offline mobil seyahat rehberi dışa aktarma'
     ],
-    techStack: ['Next.js 15', 'OpenAI GPT-4o', 'Mapbox API', 'Node.js', 'PostgreSQL'],
+    techStack: ['Next.js 16', 'OpenAI GPT-4o', 'Mapbox API', 'Node.js', 'PostgreSQL'],
     demoSlug: 'ai-travel-planner-demo',
     imageUrl: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80',
     inStock: true,
@@ -71,7 +71,7 @@ const INITIAL_PRODUCTS: Product[] = [
       'Kasa tahsilatları, gider takibi ve e-SMM / e-Fatura entegrasyonu',
       'KVKK standartlarında şifrelenmiş güvenli hasta verisi saklama'
     ],
-    techStack: ['Next.js 15', 'TypeScript', 'PostgreSQL', 'Twilio/Netgsm SMS', 'Docker'],
+    techStack: ['Next.js 16', 'TypeScript', 'PostgreSQL', 'Twilio/Netgsm SMS', 'Docker'],
     demoSlug: 'sdm-clinic-system-demo',
     imageUrl: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=800&q=80',
     inStock: true,
@@ -96,7 +96,7 @@ const INITIAL_PRODUCTS: Product[] = [
       'Gecikme uyarıları ve anlık durum bildirimleri',
       'Canlı Vercel dağıtımı ve kesintisiz erişim'
     ],
-    techStack: ['Next.js 15', 'TypeScript', 'Tailwind CSS', 'Vercel Deployment'],
+    techStack: ['Next.js 16', 'TypeScript', 'Tailwind CSS', 'Vercel Deployment'],
     demoSlug: 'protez-takip-sistemi-demo',
     imageUrl: 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&w=800&q=80',
     inStock: true,
@@ -108,7 +108,7 @@ const INITIAL_PRODUCTS: Product[] = [
     slug: 'veteriner-klinik-sistemi',
     shortDescription: 'Evcil hayvan sahipleri için online veteriner randevusu, aşı/muayene takvimi ve hekim onay yönetim paneli.',
     description: 'Hayvan sahiplerinin kolayca veteriner seçip randevu alabildiği, veteriner hekimlerin randevuları onaylayıp iptal edebildiği ve muayene sonrası detaylı tıbbi teşhis notları ekleyebildiği açık kaynak klinik platformu.',
-    category: 'webapp',
+    category: 'enterprise',
     price: 6800,
     originalPrice: 9500,
     badge: 'Popüler',
@@ -144,8 +144,8 @@ const INITIAL_DEMOS: DemoProject[] = [
       'Tahmini bütçe ve konaklama maliyet hesabı',
       'İlgi alanına göre filtreleme (Kültür, Doğa, Gastronomi)'
     ],
-    techStack: ['Next.js 15', 'OpenAI Models', 'Mapbox', 'Tailwind/CSS'],
-    liveUrl: 'https://demo.sdmsoftware.com.tr/travel-ai',
+    techStack: ['Next.js 16', 'OpenAI Models', 'Mapbox', 'Tailwind/CSS'],
+    liveUrl: '/demos/ai-travel-planner-demo',
     previewType: 'interactive_sandbox',
     status: 'active',
     viewsCount: 3120,
@@ -172,7 +172,7 @@ const INITIAL_DEMOS: DemoProject[] = [
       'Al / Tut / Sat sinyal güvenilirlik yüzdesi'
     ],
     techStack: ['PyTorch', 'FastAPI', 'Next.js', 'Recharts', 'Redis'],
-    liveUrl: 'https://demo.sdmsoftware.com.tr/stock-ai',
+    liveUrl: '/demos/stock-price-prediction-demo',
     previewType: 'dashboard_simulation',
     status: 'active',
     viewsCount: 4280,
@@ -198,8 +198,8 @@ const INITIAL_DEMOS: DemoProject[] = [
       'Otomatik SMS ve WhatsApp bildirim simülasyonu',
       'Branş bazlı poliklinik randevu akışı'
     ],
-    techStack: ['Next.js 15', 'TypeScript', 'PostgreSQL', 'Twilio API'],
-    liveUrl: 'https://demo.sdmsoftware.com.tr/clinic',
+    techStack: ['Next.js 16', 'TypeScript', 'PostgreSQL', 'Twilio API'],
+    liveUrl: '/demos/sdm-clinic-system-demo',
     previewType: 'interactive_sandbox',
     status: 'active',
     viewsCount: 2650,
@@ -436,4 +436,4 @@ class DatabaseStore {
 
 const globalForDb = globalThis as unknown as { dbStore: DatabaseStore | undefined };
 export const db = globalForDb.dbStore ?? new DatabaseStore();
-if (process.env.NODE_ENV !== 'production') globalForDb.dbStore = db;
+globalForDb.dbStore = db;

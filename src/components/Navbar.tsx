@@ -8,11 +8,9 @@ import {
   Terminal, 
   Layers, 
   ShieldCheck, 
-  User, 
   Menu, 
   X, 
   Sparkles,
-  ExternalLink,
   ChevronRight,
   Lock
 } from 'lucide-react';
@@ -22,7 +20,7 @@ import { useAuth } from '@/context/AuthContext';
 export default function Navbar() {
   const pathname = usePathname();
   const { itemCount, openCart } = useCart();
-  const { user, isAdmin, logout } = useAuth();
+  const { isAdmin, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -38,10 +36,10 @@ export default function Navbar() {
       <div style={{ background: 'linear-gradient(90deg, #090d16 0%, #111a2d 50%, #090d16 100%)', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', padding: '0.4rem 0', fontSize: '0.78rem' }}>
         <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-muted)' }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: 'var(--primary)' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: 'var(--primary)', whiteSpace: 'nowrap' }}>
               <Sparkles size={13} /> sdmsoftware.com.tr
             </span>
-            <span>• Kurumsal Yazılım Çözümleri & Canlı Sistem Vitrini</span>
+            <span className="desktop-tagline">• Kurumsal Yazılım Çözümleri & Canlı Sistem Vitrini</span>
           </div>
 
           {/* Yönetici Durumu & Giriş */}

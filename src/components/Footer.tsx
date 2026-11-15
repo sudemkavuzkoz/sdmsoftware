@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Terminal, Shield, Lock, Cpu, Globe, Mail, Phone, MapPin, ExternalLink, Layers } from 'lucide-react';
+import { Terminal, Shield, Cpu, Globe, Mail, MapPin, ExternalLink, Layers } from 'lucide-react';
 
 export default function Footer() {
   return (
@@ -49,7 +49,12 @@ export default function Footer() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Mail size={14} color="var(--primary)" />
-                <span>iletisim@sdmsoftware.com.tr</span>
+                <a
+                  href="mailto:iletisim@sdmsoftware.com.tr"
+                  style={{ color: 'var(--text-main)', textDecoration: 'underline', textUnderlineOffset: '3px' }}
+                >
+                  iletisim@sdmsoftware.com.tr
+                </a>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <MapPin size={14} color="var(--primary)" />
@@ -140,7 +145,7 @@ export default function Footer() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
                 <Cpu size={16} color="var(--primary)" />
-                <span>Next.js 15 & Modern TypeScript</span>
+                <span>Next.js 16 & Modern TypeScript</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
                 <Layers size={16} color="var(--accent-purple)" />
@@ -163,11 +168,19 @@ export default function Footer() {
           <div>
             © {new Date().getFullYear()} SDM Software (sdmsoftware.com.tr). Tüm Hakları Saklıdır.
           </div>
-          <div style={{ display: 'flex', gap: '1.5rem' }}>
-            <span>KVKK Aydınlatma Metni</span>
-            <span>Mesafeli Satış Sözleşmesi</span>
-            <span>Gizlilik & Çerez Politikası</span>
-            <span>İptal ve İade Koşulları</span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
+            <Link href="/legal/kvkk" style={{ color: 'var(--text-dim)', transition: 'color 0.2s' }}>
+              KVKK Aydınlatma Metni
+            </Link>
+            <Link href="/legal/mesafeli-satis" style={{ color: 'var(--text-dim)', transition: 'color 0.2s' }}>
+              Mesafeli Satış Sözleşmesi
+            </Link>
+            <Link href="/legal/gizlilik-cerez" style={{ color: 'var(--text-dim)', transition: 'color 0.2s' }}>
+              Gizlilik & Çerez Politikası
+            </Link>
+            <Link href="/legal/iptal-iade" style={{ color: 'var(--text-dim)', transition: 'color 0.2s' }}>
+              İptal ve İade Koşulları
+            </Link>
           </div>
         </div>
       </div>

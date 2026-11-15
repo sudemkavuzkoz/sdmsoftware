@@ -2,25 +2,27 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { 
-  User, 
-  Key, 
-  Download, 
-  Package, 
-  Clock, 
-  Copy, 
-  Check, 
-  ShieldCheck, 
+import {
+  Key,
+  Download,
+  Package,
+  Copy,
+  Check,
   ExternalLink,
-  CreditCard
+  FileText
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { db } from '@/lib/db';
+import {
+  useOrders,
+  downloadLicensePackage,
+  downloadInvoiceDocument
+} from '@/lib/orderStorage';
 
 export default function CustomerDashboardPage() {
   const { user, isAdmin } = useAuth();
-  const orders = db.getOrders();
+  const orders = useOrders();
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [downloadStatus, setDownloadStatus] = useState<string | null>(null);
 
   const handleCopy = (keyText: string) => {
     navigator.clipboard?.writeText(keyText);
@@ -52,19 +54,19 @@ export default function CustomerDashboardPage() {
               {user?.name ? user.name.substring(0, 2).toUpperCase() : 'SD'}
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                 <h1 style={{ fontSize: '1.6rem', fontWeight: 800 }}>
                   Hoş Geldiniz, {user?.name || 'Müşteri'}
                 </h1>
                 <span className="badge badge-cyan">{user?.role === 'admin' ? 'Yönetici' : 'Kurumsal Müşteri'}</span>
               </div>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginTop: '0.2rem' }}>
-                {user?.company || 'SDM Software Müşterisi'} • {user?.email}
+                {user?.company || 'SDM Software Müşterisi'} • {user?.email || 'iletisim@sdmsoftware.com.tr'}
               </p>
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
             {isAdmin && (
               <Link href="/admin" className="btn btn-purple btn-sm">
                 Yönetici Paneline Geç →
@@ -76,6 +78,22 @@ export default function CustomerDashboardPage() {
           </div>
         </div>
       </div>
+
+      {downloadStatus && (
+        <div
+          className="glass-card"
+          style={{
+            padding: '0.85rem 1.25rem',
+            marginBottom: '1.5rem',
+            borderColor: 'rgba(16, 185, 129, 0.4)',
+            color: 'var(--accent-emerald)',
+            fontSize: '0.86rem',
+            fontWeight: 600
+          }}
+        >
+          ✓ {downloadStatus}
+        </div>
+      )}
 
       {orders.length === 0 ? (
         <div className="glass-card" style={{ padding: '3.5rem 2rem', textAlign: 'center', maxWidth: '650px', margin: '0 auto' }}>
@@ -108,9 +126,10 @@ export default function CustomerDashboardPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {orders.flatMap(o => o.items.map(item => ({ item, order: o }))).map(({ item, order }, idx) => {
                   const key = order.licenseKeys[item.product.id] || `SDM-${item.product.slug.toUpperCase().substring(0, 4)}-KEY-2026`;
+                  const demoHref = item.product.demoSlug ? `/demos/${item.product.demoSlug}` : '/demos';
                   return (
                     <div
-                      key={idx}
+                      key={`${order.id}-${item.product.id}-${item.licenseTier}-${idx}`}
                       style={{
                         background: 'var(--bg-elevated)',
                         border: '1px solid var(--border-subtle)',
@@ -121,7 +140,7 @@ export default function CustomerDashboardPage() {
                         gap: '0.75rem'
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
                         <div>
                           <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>
                             {item.product.title}
@@ -130,7 +149,9 @@ export default function CustomerDashboardPage() {
                             Lisans Tipi: {item.licenseTier.toUpperCase()} • Sürüm {item.product.version}
                           </div>
                         </div>
-                        <span className="badge badge-emerald">Aktif / Süresiz</span>
+                        <span className={`badge ${order.paymentStatus === 'paid' ? 'badge-emerald' : 'badge-amber'}`}>
+                          {order.paymentStatus === 'paid' ? 'Aktif / Süresiz' : 'Ödeme Bekleniyor'}
+                        </span>
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', background: 'rgba(0,0,0,0.3)', padding: '0.6rem 0.8rem', borderRadius: 'var(--radius-sm)' }}>
@@ -138,6 +159,7 @@ export default function CustomerDashboardPage() {
                           {key}
                         </code>
                         <button
+                          type="button"
                           onClick={() => handleCopy(key)}
                           className="btn btn-secondary btn-sm"
                           style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem' }}
@@ -147,17 +169,21 @@ export default function CustomerDashboardPage() {
                         </button>
                       </div>
 
-                      <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.25rem' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', marginTop: '0.25rem' }}>
                         <button
-                          onClick={() => alert(`${item.product.title} kaynak kod arşivi indirilmeye başlandı.`)}
+                          type="button"
+                          onClick={() => {
+                            downloadLicensePackage(order, item.product.id);
+                            setDownloadStatus(`${item.product.title} lisans ve kurulum paketi indirildi.`);
+                          }}
                           className="btn btn-secondary btn-sm"
                           style={{ fontSize: '0.78rem' }}
                         >
-                          <Download size={13} /> Kaynak Kodu İndir
+                          <Download size={13} /> Kurulum & Lisans Paketi
                         </button>
                         {item.product.demoSlug && (
                           <Link
-                            href={`/demos`}
+                            href={demoHref}
                             className="btn btn-secondary btn-sm"
                             style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}
                           >
@@ -193,9 +219,11 @@ export default function CustomerDashboardPage() {
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                      <span style={{ fontWeight: 700, color: 'var(--text-main)' }}>{ord.orderNumber}</span>
-                      <span className="badge badge-emerald" style={{ fontSize: '0.68rem' }}>
-                        {ord.orderStatus === 'completed' ? 'Tamamlandı' : ord.orderStatus}
+                      <Link href={`/order-success/${ord.id}`} style={{ fontWeight: 700, color: 'var(--text-main)' }}>
+                        {ord.orderNumber}
+                      </Link>
+                      <span className={`badge ${ord.orderStatus === 'completed' ? 'badge-emerald' : 'badge-amber'}`} style={{ fontSize: '0.68rem' }}>
+                        {ord.orderStatus === 'completed' ? 'Tamamlandı' : 'İşleniyor'}
                       </span>
                     </div>
 
@@ -203,8 +231,18 @@ export default function CustomerDashboardPage() {
                       Tarih: {new Date(ord.createdAt).toLocaleDateString('tr-TR')} • {ord.items.length} Kalem Ürün
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.5rem', borderTop: '1px solid var(--border-subtle)' }}>
-                      <span style={{ color: 'var(--text-dim)' }}>Ödenen:</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.6rem', borderTop: '1px solid var(--border-subtle)' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          downloadInvoiceDocument(ord);
+                          setDownloadStatus(`${ord.orderNumber} için E-Fatura özeti indirildi.`);
+                        }}
+                        className="btn btn-secondary btn-sm"
+                        style={{ fontSize: '0.72rem', padding: '0.25rem 0.55rem' }}
+                      >
+                        <FileText size={12} /> Fatura
+                      </button>
                       <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '0.95rem' }}>
                         {ord.total.toLocaleString('tr-TR')} ₺
                       </span>

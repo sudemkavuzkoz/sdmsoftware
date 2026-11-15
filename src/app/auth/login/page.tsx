@@ -3,18 +3,32 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Terminal, Lock, Mail, ShieldCheck, User } from 'lucide-react';
+import { Terminal } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login(email || 'musteri@sdmsoftware.com.tr', 'SDM Müşterisi', 'customer');
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !trimmedEmail.includes('@')) {
+      setErrorMsg('Lütfen geçerli bir e-posta adresi giriniz.');
+      return;
+    }
+    if (password.trim().length < 4) {
+      setErrorMsg('Şifreniz en az 4 karakter olmalıdır.');
+      return;
+    }
+
+    setErrorMsg(null);
+    const derivedName = name.trim() || trimmedEmail.split('@')[0];
+    login(trimmedEmail, derivedName, 'customer');
     router.push('/dashboard');
   };
 
@@ -44,7 +58,34 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {errorMsg && (
+          <div
+            style={{
+              background: 'rgba(244, 63, 94, 0.12)',
+              border: '1px solid rgba(244, 63, 94, 0.35)',
+              color: 'var(--accent-rose)',
+              fontSize: '0.82rem',
+              padding: '0.65rem 0.85rem',
+              borderRadius: 'var(--radius-sm)',
+              marginBottom: '1rem'
+            }}
+          >
+            {errorMsg}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">Ad Soyad (Opsiyonel)</label>
+            <input
+              type="text"
+              placeholder="Örn: Sudem Yılmaz"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="form-input"
+            />
+          </div>
+
           <div className="form-group">
             <label className="form-label">E-Posta Adresi</label>
             <input
@@ -62,7 +103,8 @@ export default function LoginPage() {
             <input
               type="password"
               required
-              placeholder="••••••••"
+              minLength={4}
+              placeholder="En az 4 karakter"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="form-input"

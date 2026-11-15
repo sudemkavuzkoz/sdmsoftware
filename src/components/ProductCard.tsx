@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ShoppingCart, Star, Check, ExternalLink, Play, Mail } from 'lucide-react';
 import { Product } from '@/lib/types';
 import { useCart } from '@/context/CartContext';
@@ -63,10 +64,13 @@ export default function ProductCard({ product, onOpenDemo }: ProductCardProps) {
 
       {/* Ürün Görseli & Rozetler */}
       <div style={{ position: 'relative', height: '200px', overflow: 'hidden', background: '#0a0e17' }}>
-        <img
+        <Image
           src={product.imageUrl}
           alt={product.title}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }}
+          fill
+          sizes="(max-width: 768px) 100vw, 400px"
+          unoptimized
+          style={{ objectFit: 'cover', transition: 'transform 0.5s ease' }}
           className="product-img"
         />
 

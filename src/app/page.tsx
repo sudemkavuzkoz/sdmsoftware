@@ -2,20 +2,13 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { 
-  Terminal, 
-  Layers, 
-  ArrowRight, 
-  ShieldCheck, 
-  Zap, 
-  Cpu, 
-  Code2, 
-  CheckCircle, 
-  Play, 
-  Download, 
-  Server,
+import {
+  Layers,
+  ArrowRight,
+  ShieldCheck,
+  Zap,
+  Download,
   Sparkles,
-  Lock,
   MessageSquare
 } from 'lucide-react';
 import { db } from '@/lib/db';
@@ -78,7 +71,7 @@ export default function HomePage() {
             <div className="glass-card" style={{ width: '100%', padding: '1.75rem 2rem', background: 'rgba(13, 18, 29, 0.65)' }}>
               <div className="grid-cols-4">
                 <div>
-                  <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary)' }}>3 Ana</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary)' }}>{demos.length} Canlı</div>
                   <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Canlı Yazılım Çözümü</div>
                 </div>
                 <div>

@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Layers, Play, CheckCircle, ShieldCheck, Sparkles, Terminal, Code2 } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { db } from '@/lib/db';
-import { DemoProject, DemoCategory } from '@/lib/types';
+import { DemoProject } from '@/lib/types';
 import DemoCard from '@/components/DemoCard';
 import LiveDemoModal from '@/components/LiveDemoModal';
 
@@ -16,7 +16,7 @@ export default function DemosPage() {
     { id: 'all', label: 'Tüm Canlı Demolar' },
     { id: 'travel_ai', label: 'AI Travel Planner' },
     { id: 'stock_prediction', label: 'Hisse Senedi Tahmini' },
-    { id: 'clinic_system', label: 'SDM Klinik Sistemi' }
+    { id: 'clinic_system', label: 'Klinik & Sağlık Sistemleri' }
   ];
 
   const filteredDemos = allDemos.filter(d => selectedCategory === 'all' || d.category === selectedCategory);
@@ -33,7 +33,7 @@ export default function DemosPage() {
           Geliştirdiğimiz Sistemlerin <span className="text-gradient">Canlı Vitrini</span>
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', lineHeight: '1.6' }}>
-          AI Travel Planner, Hisse Senedi Fiyat Tahmin Motoru ve SDM Klinik sistemlerimizi tarayıcınızda canlı deneyimleyin.
+          AI Travel Planner, Hisse Senedi Fiyat Tahmin Motoru, SDM Klinik, ADSP Protez Takip ve Veteriner Klinik sistemlerimizi tarayıcınızda canlı deneyimleyin.
         </p>
       </div>
 
