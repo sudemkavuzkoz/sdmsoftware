@@ -1,4 +1,4 @@
-import { MembershipTier, User } from './types';
+import { MembershipTier, Product, User } from './types';
 
 export interface MembershipPlanMeta {
   id: MembershipTier;
@@ -129,4 +129,31 @@ export function hasDemoUnlock(user: User | null, demoSlug: string, productSlug?:
       l.status === 'active' &&
       (l.targetSlug === 'all' || l.targetSlug === demoSlug || (productSlug && l.targetSlug === productSlug))
   );
+}
+
+export function planToCartProduct(tier: Exclude<MembershipTier, 'free'>, demoSlug?: string): Product {
+  const plan = MEMBERSHIP_PLANS.find((p) => p.id === tier) ?? MEMBERSHIP_PLANS[1];
+  return {
+    id: `plan-${plan.id}`,
+    title: plan.name,
+    slug: plan.id,
+    shortDescription: plan.tagline,
+    description: plan.tagline,
+    category: 'saas',
+    price: plan.price,
+    badge: plan.id === 'pro_monthly' ? 'Popüler' : 'Yeni',
+    rating: 5,
+    reviewsCount: 0,
+    features: plan.features,
+    techStack: ['SDM Cloud', 'White-Label Engine'],
+    demoSlug: demoSlug || 'sdm-clinic-system-demo',
+    imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
+    inStock: true,
+    version: 'v4.0'
+  };
+}
+
+export function formatIban(raw: string): string {
+  const cleaned = raw.replace(/\s+/g, '').toUpperCase();
+  return cleaned.replace(/(.{4})/g, '$1 ').trim();
 }

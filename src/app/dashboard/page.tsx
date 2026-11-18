@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Check,
   Copy,
@@ -21,6 +22,7 @@ import {
   UserPlus
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useCart } from '@/context/CartContext';
 import {
   downloadInvoiceDocument,
   downloadLicensePackage,
@@ -31,7 +33,8 @@ import {
   canCustomizeBranding,
   CUSTOM_MODULE_OPTIONS,
   getTierLabel,
-  MEMBERSHIP_PLANS
+  MEMBERSHIP_PLANS,
+  planToCartProduct
 } from '@/lib/membership';
 import { MembershipTier, User, UserBrandingConfig } from '@/lib/types';
 
@@ -250,13 +253,14 @@ function BrandingStudioForm({
 }
 
 export default function CustomerDashboardPage() {
+  const router = useRouter();
+  const { addToCart, closeCart } = useCart();
   const {
     user,
     dbOrders,
     authLoading,
     isAuthenticated,
     isAdmin,
-    upgradeMembership,
     activateLicenseKey,
     saveBrandingConfig,
     logout
@@ -284,19 +288,10 @@ export default function CustomerDashboardPage() {
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  const handleUpgradePlan = async (tier: Exclude<MembershipTier, 'free'>) => {
-    setBusy(true);
-    setStatusBanner(null);
-    const res = await upgradeMembership(tier, 'all');
-    setBusy(false);
-    if (!res.success) {
-      setStatusBanner({ ok: false, msg: res.error || 'Üyelik yükseltilemedi.' });
-      return;
-    }
-    setStatusBanner({
-      ok: true,
-      msg: `${getTierLabel(tier)} veritabanına işlendi ve tüm canlı demolar için aktif edildi!`
-    });
+  const handleUpgradePlan = (tier: Exclude<MembershipTier, 'free'>) => {
+    addToCart(planToCartProduct(tier, 'all'), 'standard');
+    closeCart();
+    router.push('/checkout');
   };
 
   const handleActivateKey = async (e: React.FormEvent) => {
@@ -516,7 +511,7 @@ export default function CustomerDashboardPage() {
                     className="btn btn-primary btn-sm"
                     style={{ width: '100%' }}
                   >
-                    {plan.id === 'enterprise_license' ? 'Lisansı Satın Al & Aktifleştir' : 'Premium Planı Başlat'}
+                    {plan.id === 'enterprise_license' ? 'IBAN / Havale ile Lisans Al →' : 'Sepete Ekle & IBAN ile Öde →'}
                   </button>
                 )}
               </div>
@@ -565,30 +560,44 @@ export default function CustomerDashboardPage() {
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: '1rem' }}>
-              {user.licenses.map((lic) => (
-                <div key={lic.id} className="glass-card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <strong style={{ fontSize: '0.94rem' }}>{lic.productTitle}</strong>
-                    <span className="badge badge-emerald" style={{ fontSize: '0.66rem' }}>Aktif</span>
+              {user.licenses.map((lic) => {
+                const isPending = lic.status === 'pending';
+                const isRevoked = lic.status === 'revoked';
+                return (
+                  <div key={lic.id} className="glass-card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+                      <strong style={{ fontSize: '0.94rem' }}>{lic.productTitle}</strong>
+                      <span className={`badge ${isPending ? 'badge-amber' : isRevoked ? 'badge-purple' : 'badge-emerald'}`} style={{ fontSize: '0.66rem' }}>
+                        {isPending ? 'Ödeme Onayı Bekleniyor' : isRevoked ? 'İptal Edildi' : 'Aktif'}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                      Tip: {lic.tier.toUpperCase()} • Tarih: {new Date(lic.grantedAt).toLocaleDateString('tr-TR')}
+                    </div>
+                    {isPending ? (
+                      <div style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '8px', padding: '0.6rem 0.75rem', fontSize: '0.74rem', color: '#fde68a' }}>
+                        Havale / EFT ödemeniz yönetici tarafından onaylandığında lisans anahtarınız aktif edilecektir.
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.3)', padding: '0.55rem 0.75rem', borderRadius: '8px' }}>
+                          <code style={{ color: 'var(--primary)', fontFamily: 'var(--font-mono)', fontSize: '0.82rem' }}>{lic.licenseKey}</code>
+                          <button type="button" onClick={() => handleCopy(lic.licenseKey)} className="btn btn-secondary btn-sm" style={{ padding: '0.2rem 0.5rem', fontSize: '0.72rem' }}>
+                            {copiedKey === lic.licenseKey ? <Check size={12} color="var(--accent-emerald)" /> : <Copy size={12} />}
+                          </button>
+                        </div>
+                        <Link
+                          href={lic.targetSlug === 'all' ? '/demos' : `/live/${lic.targetSlug}`}
+                          className="btn btn-secondary btn-sm"
+                          style={{ fontSize: '0.76rem' }}
+                        >
+                          <ExternalLink size={13} /> Özel Markalı Sistemi Aç
+                        </Link>
+                      </>
+                    )}
                   </div>
-                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                    Tip: {lic.tier.toUpperCase()} • Veriliş: {new Date(lic.grantedAt).toLocaleDateString('tr-TR')}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.3)', padding: '0.55rem 0.75rem', borderRadius: '8px' }}>
-                    <code style={{ color: 'var(--primary)', fontFamily: 'var(--font-mono)', fontSize: '0.82rem' }}>{lic.licenseKey}</code>
-                    <button type="button" onClick={() => handleCopy(lic.licenseKey)} className="btn btn-secondary btn-sm" style={{ padding: '0.2rem 0.5rem', fontSize: '0.72rem' }}>
-                      {copiedKey === lic.licenseKey ? <Check size={12} color="var(--accent-emerald)" /> : <Copy size={12} />}
-                    </button>
-                  </div>
-                  <Link
-                    href={lic.targetSlug === 'all' ? '/demos' : `/live/${lic.targetSlug}`}
-                    className="btn btn-secondary btn-sm"
-                    style={{ fontSize: '0.76rem' }}
-                  >
-                    <ExternalLink size={13} /> Özel Markalı Sistemi Aç
-                  </Link>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

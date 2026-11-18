@@ -5,11 +5,12 @@ import crypto from 'node:crypto';
 import {
   MembershipTier,
   Order,
+  PaymentSettings,
   User,
   UserBrandingConfig,
   UserLicenseGrant
 } from './types';
-import { canCustomizeBranding, MEMBERSHIP_PLANS } from './membership';
+import { canCustomizeBranding, formatIban, MEMBERSHIP_PLANS } from './membership';
 import { db as memoryCatalogDb } from './db';
 
 interface StoredUserRecord extends User {
@@ -21,6 +22,23 @@ interface PersistedDatabase {
   sessionSecret: string;
   users: StoredUserRecord[];
   orders: Order[];
+  paymentSettings: PaymentSettings;
+}
+
+function defaultPaymentSettings(): PaymentSettings {
+  return {
+    wireTransferEnabled: true,
+    bankName: '',
+    accountHolder: '',
+    iban: '',
+    branchOrSwift: '',
+    transferNote: 'Havale / EFT açıklamasına sipariş numaranızı (SDM-...) yazınız. Kontrol sonrası lisansınız ve üyeliğiniz hemen aktif edilir.',
+    virtualPosEnabled: false,
+    virtualPosProvider: 'none',
+    taxRatePct: 20,
+    pricesIncludeTax: true,
+    updatedAt: '2026-11-18T00:00:00.000Z'
+  };
 }
 
 export const SESSION_COOKIE_NAME = 'sdm_session';
@@ -109,7 +127,8 @@ function createInitialSeed(): PersistedDatabase {
         createdAt: '2026-01-01T00:00:00.000Z'
       }
     ],
-    orders: []
+    orders: [],
+    paymentSettings: defaultPaymentSettings()
   };
 }
 
@@ -143,7 +162,10 @@ class PersistentDatabase {
         const raw = fs.readFileSync(this.dbFilePath, 'utf8');
         const parsed = JSON.parse(raw) as PersistedDatabase;
         if (parsed && Array.isArray(parsed.users) && Array.isArray(parsed.orders)) {
-          return parsed;
+          return {
+            ...parsed,
+            paymentSettings: parsed.paymentSettings ?? defaultPaymentSettings()
+          };
         }
       }
     } catch {
@@ -171,7 +193,10 @@ class PersistentDatabase {
         const raw = fs.readFileSync(this.dbFilePath, 'utf8');
         const parsed = JSON.parse(raw) as PersistedDatabase;
         if (parsed && Array.isArray(parsed.users) && Array.isArray(parsed.orders)) {
-          this.state = parsed;
+          this.state = {
+            ...parsed,
+            paymentSettings: parsed.paymentSettings ?? defaultPaymentSettings()
+          };
         }
       }
     } catch {
@@ -418,17 +443,27 @@ class PersistentDatabase {
       return { error: 'Bu lisans anahtarı hesabınızda zaten tanımlı.' };
     }
 
-    // Check matching order license in persisted orders first
-    let matchedTitle = 'Özel Kişiselleştirilebilir Sistem Lisansı';
+    // Verify license key against persisted orders in database
+    let matchedOrder: Order | null = null;
+    let matchedTitle = '';
     let matchedSlug = targetSlug;
     for (const ord of this.state.orders) {
       for (const item of ord.items) {
         if (ord.licenseKeys[item.product.id]?.toUpperCase() === key) {
+          matchedOrder = ord;
           matchedTitle = item.product.title;
           matchedSlug = item.product.demoSlug || item.product.slug;
           break;
         }
       }
+      if (matchedOrder) break;
+    }
+
+    if (!matchedOrder) {
+      return { error: 'Bu lisans anahtarı sipariş veritabanında bulunamadı.' };
+    }
+    if (matchedOrder.paymentStatus !== 'paid' || matchedOrder.orderStatus !== 'completed') {
+      return { error: 'Bu siparişin Havale/EFT ödemesi henüz onaylanmamıştır. Ödeme onaylandığında lisans aktif edilecektir.' };
     }
 
     const grant: UserLicenseGrant = {
@@ -516,36 +551,128 @@ class PersistentDatabase {
     };
 
     this.state.orders.unshift(newOrder);
+    this.syncOrderGrantsToUser(newOrder, activeUserId);
+    this.saveToDisk();
+    return newOrder;
+  }
 
-    // Attach granted licenses onto matching user account in database
-    const emailLower = orderData.customerEmail?.trim().toLowerCase();
+  private syncOrderGrantsToUser(order: Order, activeUserId?: string | null): void {
+    const emailLower = order.customerEmail?.trim().toLowerCase();
     const userIdx = this.state.users.findIndex(
       (u) => (activeUserId && u.id === activeUserId) || (emailLower && u.email.toLowerCase() === emailLower)
     );
+    if (userIdx === -1) return;
 
-    if (userIdx !== -1) {
-      const targetUser = this.state.users[userIdx];
-      for (const item of newOrder.items) {
-        const key = licenseKeys[item.product.id];
+    const targetUser = this.state.users[userIdx];
+    const grantStatus: UserLicenseGrant['status'] =
+      order.paymentStatus === 'paid' && order.orderStatus === 'completed'
+        ? 'active'
+        : order.orderStatus === 'refunded' || order.paymentStatus === 'failed'
+        ? 'revoked'
+        : 'pending';
+
+    for (const item of order.items) {
+      const key = order.licenseKeys[item.product.id];
+      const existingGrant = targetUser.licenses.find((l) => l.licenseKey === key);
+      if (existingGrant) {
+        existingGrant.status = grantStatus;
+      } else {
         const productMeta = memoryCatalogDb.getProductBySlug(item.product.slug);
+        const expiresAt =
+          item.product.slug === 'pro_monthly'
+            ? new Date(Date.now() + 30 * 86400 * 1000).toISOString()
+            : item.product.slug === 'pro_yearly'
+            ? new Date(Date.now() + 365 * 86400 * 1000).toISOString()
+            : undefined;
         targetUser.licenses.unshift({
           id: `lic-${Date.now()}-${item.product.id}`,
           licenseKey: key,
           targetSlug: productMeta?.demoSlug || item.product.demoSlug || item.product.slug,
           productTitle: item.product.title,
           tier: item.licenseTier,
-          status: 'active',
-          grantedAt: newOrder.createdAt
+          status: grantStatus,
+          grantedAt: order.createdAt,
+          expiresAt
         });
       }
-      if (targetUser.membershipTier === 'free') {
-        targetUser.membershipTier = 'enterprise_license';
-        targetUser.demoTrialLimit = 9999;
+
+      if (grantStatus === 'active') {
+        const slug = item.product.slug;
+        if (slug === 'pro_monthly' || slug === 'pro_yearly' || slug === 'enterprise_license') {
+          targetUser.membershipTier = slug;
+          targetUser.demoTrialLimit = 9999;
+        } else if (targetUser.membershipTier === 'free') {
+          targetUser.membershipTier = 'enterprise_license';
+          targetUser.demoTrialLimit = 9999;
+        }
       }
     }
+  }
+
+  updateOrderStatus(
+    orderId: string,
+    orderStatus: Order['orderStatus'],
+    paymentStatus?: Order['paymentStatus']
+  ): Order | null {
+    this.syncRead();
+    const idx = this.state.orders.findIndex((o) => o.id === orderId || o.orderNumber === orderId);
+    if (idx === -1) return null;
+
+    const target = this.state.orders[idx];
+    target.orderStatus = orderStatus;
+    if (paymentStatus) {
+      target.paymentStatus = paymentStatus;
+    } else if (orderStatus === 'completed' && target.paymentStatus === 'pending') {
+      target.paymentStatus = 'paid';
+    } else if (orderStatus === 'refunded') {
+      target.paymentStatus = 'failed';
+    }
+
+    this.syncOrderGrantsToUser(target);
+    this.saveToDisk();
+    return target;
+  }
+
+  getPaymentSettings(): PaymentSettings {
+    this.syncRead();
+    return this.state.paymentSettings ?? defaultPaymentSettings();
+  }
+
+  updatePaymentSettings(updates: Partial<PaymentSettings>): { settings?: PaymentSettings; error?: string } {
+    this.syncRead();
+    const current = this.state.paymentSettings ?? defaultPaymentSettings();
+    const cleanedIban =
+      typeof updates.iban === 'string'
+        ? updates.iban.replace(/\s+/g, '').toUpperCase()
+        : current.iban.replace(/\s+/g, '').toUpperCase();
+
+    if (cleanedIban && (!cleanedIban.startsWith('TR') || cleanedIban.length !== 26 || !/^TR\d{24}$/.test(cleanedIban))) {
+      return {
+        error: 'Geçerli bir Türkiye IBAN numarası giriniz (TR ile başlamalı ve toplam 26 karakter olmalıdır).'
+      };
+    }
+
+    const taxRate =
+      typeof updates.taxRatePct === 'number' && Number.isFinite(updates.taxRatePct)
+        ? Math.min(40, Math.max(0, Math.round(updates.taxRatePct)))
+        : current.taxRatePct;
+
+    this.state.paymentSettings = {
+      wireTransferEnabled: updates.wireTransferEnabled ?? current.wireTransferEnabled,
+      bankName: updates.bankName !== undefined ? updates.bankName.trim().slice(0, 80) : current.bankName,
+      accountHolder: updates.accountHolder !== undefined ? updates.accountHolder.trim().slice(0, 80) : current.accountHolder,
+      iban: cleanedIban ? formatIban(cleanedIban) : '',
+      branchOrSwift: updates.branchOrSwift !== undefined ? updates.branchOrSwift.trim().slice(0, 40) : current.branchOrSwift,
+      transferNote: updates.transferNote !== undefined ? updates.transferNote.trim().slice(0, 240) : current.transferNote,
+      virtualPosEnabled: updates.virtualPosEnabled ?? current.virtualPosEnabled,
+      virtualPosProvider: updates.virtualPosProvider ?? current.virtualPosProvider,
+      taxRatePct: taxRate,
+      pricesIncludeTax: updates.pricesIncludeTax ?? current.pricesIncludeTax,
+      updatedAt: new Date().toISOString()
+    };
 
     this.saveToDisk();
-    return newOrder;
+    return { settings: this.state.paymentSettings };
   }
 
   getOrders(): Order[] {

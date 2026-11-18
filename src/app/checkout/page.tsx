@@ -1,22 +1,24 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
-  CreditCard,
-  Building,
-  ShieldCheck,
-  Lock,
   ArrowLeft,
-  Smartphone,
-  X
+  Building,
+  Check,
+  Copy,
+  CreditCard,
+  Landmark,
+  Lock,
+  ShieldCheck,
+  Tag
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/db';
 import { persistClientOrder } from '@/lib/orderStorage';
-import { DemoProject, Order } from '@/lib/types';
+import { DemoProject, Order, PaymentSettings } from '@/lib/types';
 import DemoCard from '@/components/DemoCard';
 import LiveDemoModal from '@/components/LiveDemoModal';
 
@@ -24,87 +26,91 @@ type PendingOrderData = Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'licens
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, subtotal, discountAmount, total, clearCart } = useCart();
+  const {
+    items,
+    subtotal,
+    discountAmount,
+    total,
+    clearCart,
+    couponCode,
+    applyCoupon,
+    removeCoupon
+  } = useCart();
   const { user, refreshSession } = useAuth();
 
-  const initialName = user && user.id !== 'usr-demo-default' ? user.name : '';
-  const initialEmail = user && user.id !== 'usr-demo-default' ? user.email : '';
+  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null);
+  const [copiedIban, setCopiedIban] = useState(false);
 
-  // Müşteri ve Fatura Bilgileri
-  const [customerName, setCustomerName] = useState(initialName);
-  const [customerEmail, setCustomerEmail] = useState(initialEmail);
-  const [customerPhone, setCustomerPhone] = useState('');
-  const [companyName, setCompanyName] = useState('');
+  // Customer & Billing Fields (pre-filled only when real logged-in user exists)
+  const [customerName, setCustomerName] = useState(user?.name ?? '');
+  const [customerEmail, setCustomerEmail] = useState(user?.email ?? '');
+  const [customerPhone, setCustomerPhone] = useState(user?.phone ?? '');
+  const [companyName, setCompanyName] = useState(user?.company ?? '');
   const [taxNumber, setTaxNumber] = useState('');
   const [address, setAddress] = useState('');
+  const [transferReference, setTransferReference] = useState('');
 
-  // Ödeme Yöntemi ve Kart Bilgileri
-  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'wire_transfer'>('credit_card');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardHolder, setCardHolder] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvv, setCardCvv] = useState('');
+  // Coupon Input
+  const [couponInput, setCouponInput] = useState('');
+  const [couponFeedback, setCouponFeedback] = useState<string | null>(null);
 
-  // 3D Secure Modal Durumu
-  const [is3DSecureOpen, setIs3DSecureOpen] = useState(false);
-  const [smsCode, setSmsCode] = useState('192837');
+  // Payment Method State
+  const [paymentMethod, setPaymentMethod] = useState<'wire_transfer' | 'credit_card'>('wire_transfer');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [tempOrderData, setTempOrderData] = useState<PendingOrderData | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  // Empty-cart Demo Showcase Modal
   const [selectedDemo, setSelectedDemo] = useState<DemoProject | null>(null);
   const allDemos = db.getDemos();
 
   useEffect(() => {
-    if (!is3DSecureOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isProcessing) {
-        setIs3DSecureOpen(false);
-      }
+    let active = true;
+    fetch('/api/settings/payment', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((data: { success?: boolean; settings?: PaymentSettings }) => {
+        if (active && data.success && data.settings) {
+          setPaymentSettings(data.settings);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [is3DSecureOpen, isProcessing]);
+  }, []);
 
-  const handleFillDemoValues = () => {
-    setCustomerName(initialName || 'Örnek Müşteri');
-    setCustomerEmail(initialEmail || 'musteri@ornekfirma.com');
-    setCustomerPhone('+90 532 000 0000');
-    setCompanyName('Örnek Teknoloji Ltd.');
-    setTaxNumber('1234567890');
-    setAddress('Büyükdere Cad. No: 195 Levent, İstanbul');
-    setCardHolder('ÖRNEK MÜŞTERİ');
-    setCardNumber('5400 1234 5678 9010');
-    setCardExpiry('12/28');
-    setCardCvv('321');
+  const taxRate = paymentSettings?.taxRatePct ?? 20;
+  const pricesIncludeTax = paymentSettings?.pricesIncludeTax ?? true;
+  const computedTaxAmount =
+    taxRate > 0
+      ? pricesIncludeTax
+        ? Math.round(total - total / (1 + taxRate / 100))
+        : Math.round((total * taxRate) / 100)
+      : 0;
+  const finalPayableTotal = pricesIncludeTax ? total : total + computedTaxAmount;
+
+  const handleCopyIban = () => {
+    if (!paymentSettings?.iban) return;
+    navigator.clipboard?.writeText(paymentSettings.iban.replace(/\s+/g, ''));
+    setCopiedIban(true);
+    setTimeout(() => setCopiedIban(false), 2200);
   };
 
-  const finalizeOrder = async (orderPayload: PendingOrderData) => {
-    const fallbackOrder = db.createOrder(orderPayload);
-    let finalOrder = fallbackOrder;
-    try {
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderPayload)
-      });
-      const data = (await res.json()) as { success?: boolean; order?: Order };
-      if (data.success && data.order) {
-        finalOrder = data.order;
-      }
-      await refreshSession();
-    } catch {
-      // Ağ hatasında yerel sipariş ile devam edilir
-    }
-    persistClientOrder(finalOrder);
-
-    clearCart();
-    setIsProcessing(false);
-    setIs3DSecureOpen(false);
-    router.push(`/order-success/${finalOrder.id}`);
+  const handleApplyCoupon = () => {
+    const res = applyCoupon(couponInput);
+    setCouponFeedback(res.message);
   };
 
-  const handleSubmitCheckout = (e: React.FormEvent) => {
+  const handleSubmitCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     if (items.length === 0) return;
+
+    if (paymentMethod === 'credit_card' && !paymentSettings?.virtualPosEnabled) {
+      setCheckoutError('Sanal POS henüz aktif olmadığı için lütfen Banka Havalesi / EFT / FAST ile devam ediniz.');
+      return;
+    }
+
+    setCheckoutError(null);
+    setIsProcessing(true);
 
     const orderPayload: PendingOrderData = {
       customerName: customerName.trim(),
@@ -115,28 +121,33 @@ export default function CheckoutPage() {
       items,
       subtotal,
       discount: discountAmount,
-      total,
+      total: finalPayableTotal,
       paymentMethod,
-      paymentStatus: paymentMethod === 'wire_transfer' ? 'pending' : 'paid',
-      orderStatus: paymentMethod === 'wire_transfer' ? 'processing' : 'completed'
+      paymentStatus: 'pending',
+      orderStatus: 'processing',
+      transferReference: transferReference.trim() || undefined
     };
 
-    if (paymentMethod === 'wire_transfer') {
-      setIsProcessing(true);
-      finalizeOrder(orderPayload);
-      return;
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload)
+      });
+      const data = (await res.json()) as { success?: boolean; order?: Order; error?: string };
+      if (!res.ok || !data.success || !data.order) {
+        setCheckoutError(data.error || 'Sipariş kaydedilemedi. Lütfen bilgileri kontrol edin.');
+        setIsProcessing(false);
+        return;
+      }
+      persistClientOrder(data.order);
+      await refreshSession();
+      clearCart();
+      router.push(`/order-success/${data.order.id}`);
+    } catch {
+      setCheckoutError('Sipariş sunucusuna bağlanırken hata oluştu.');
+      setIsProcessing(false);
     }
-
-    setTempOrderData(orderPayload);
-    setIs3DSecureOpen(true);
-  };
-
-  const handleConfirm3DSecure = () => {
-    if (!tempOrderData) return;
-    setIsProcessing(true);
-    setTimeout(() => {
-      finalizeOrder(tempOrderData);
-    }, 900);
   };
 
   if (items.length === 0) {
@@ -145,7 +156,7 @@ export default function CheckoutPage() {
         <div className="glass-card" style={{ padding: '3rem 1.5rem', textAlign: 'center', marginBottom: '3.5rem' }}>
           <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '0.75rem' }}>Sepetiniz Boş</h2>
           <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-            Ödeme yapabilmek için sepetinizde ürün bulunmalıdır. Öncesinde gerçek çalışan sistem demolarımızı doğrudan deneyimleyebilirsiniz.
+            Ödeme yapabilmek için sepetinizde ürün veya üyelik paketi bulunmalıdır. Öncesinde gerçek çalışan sistem demolarımızı doğrudan deneyimleyebilirsiniz.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.85rem', justifyContent: 'center' }}>
             <Link href="/products" className="btn btn-primary">
@@ -178,6 +189,8 @@ export default function CheckoutPage() {
     );
   }
 
+  const posEnabled = Boolean(paymentSettings?.virtualPosEnabled && paymentSettings.virtualPosProvider !== 'none');
+
   return (
     <div className="container" style={{ paddingTop: '2.5rem', paddingBottom: '5rem' }}>
       <Link
@@ -194,37 +207,48 @@ export default function CheckoutPage() {
         <ArrowLeft size={16} /> Sepete Geri Dön
       </Link>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2.2rem', fontWeight: 800 }}>
-          Güvenli <span className="text-gradient">Ödeme ve Fatura</span>
+      <div style={{ marginBottom: '2rem' }}>
+        <h1 style={{ fontSize: '2.1rem', fontWeight: 800 }}>
+          Sipariş, Fatura ve <span className="text-gradient">IBAN Ödeme</span>
         </h1>
-        <button
-          type="button"
-          onClick={handleFillDemoValues}
-          className="btn btn-secondary btn-sm"
-          style={{ fontSize: '0.78rem' }}
-        >
-          Demo Test Bilgilerini Doldur
-        </button>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginTop: '0.35rem' }}>
+          Siparişinizi oluşturup banka havalesi / EFT ile ödemenizi tamamladığınızda yönetici onayı sonrası lisansınız aktive edilir.
+        </p>
       </div>
 
-      <form onSubmit={handleSubmitCheckout} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '2.5rem' }} className="checkout-layout">
-        {/* Sol Sütun: Fatura & Ödeme Formu */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
-          {/* Fatura Bilgileri */}
-          <div className="glass-card" style={{ padding: '2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.5rem' }}>
+      {checkoutError && (
+        <div
+          role="alert"
+          style={{
+            marginBottom: '1.5rem',
+            padding: '0.85rem 1.1rem',
+            borderRadius: 'var(--radius-md)',
+            background: 'rgba(244, 63, 94, 0.12)',
+            border: '1px solid rgba(244, 63, 94, 0.35)',
+            color: 'var(--accent-rose)',
+            fontSize: '0.86rem'
+          }}
+        >
+          {checkoutError}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmitCheckout} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '2.25rem' }} className="checkout-layout">
+        {/* Left: Customer Invoice & Bank IBAN Section */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div className="glass-card" style={{ padding: '1.85rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.35rem' }}>
               <Building size={20} color="var(--primary)" />
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Müşteri & Fatura Bilgileri</h2>
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Müşteri &amp; Fatura Bilgileri</h2>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '0.9rem' }}>
               <div className="form-group">
-                <label className="form-label">Ad Soyad / Yetkili</label>
+                <label className="form-label">Ad Soyad / Yetkili *</label>
                 <input
                   type="text"
                   required
-                  placeholder="Örn: Sudem Yılmaz"
+                  placeholder="Ad Soyad"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   className="form-input"
@@ -232,21 +256,19 @@ export default function CheckoutPage() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">E-Posta Adresi (Lisans buraya iletilir)</label>
+                <label className="form-label">E-Posta Adresi (Lisans buraya tanımlanır) *</label>
                 <input
                   type="email"
                   required
-                  placeholder="ad@sirketiniz.com"
+                  placeholder="eposta@adresiniz.com"
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   className="form-input"
                 />
               </div>
-            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div className="form-group">
-                <label className="form-label">Telefon Numarası</label>
+                <label className="form-label">Telefon Numarası *</label>
                 <input
                   type="tel"
                   required
@@ -258,10 +280,10 @@ export default function CheckoutPage() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Şirket Ünvanı (Opsiyonel)</label>
+                <label className="form-label">Şirket / Klinik Ünvanı (Opsiyonel)</label>
                 <input
                   type="text"
-                  placeholder="Şirket / Klinik Adı"
+                  placeholder="Şirket veya Klinik Adı"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   className="form-input"
@@ -269,9 +291,9 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '0.9rem', marginTop: '0.25rem' }}>
               <div className="form-group">
-                <label className="form-label">Vergi No / TC No</label>
+                <label className="form-label">Vergi No / T.C. Kimlik</label>
                 <input
                   type="text"
                   placeholder="Opsiyonel"
@@ -282,7 +304,7 @@ export default function CheckoutPage() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Fatura Adresi</label>
+                <label className="form-label">Fatura Adresi *</label>
                 <input
                   type="text"
                   required
@@ -295,165 +317,209 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Ödeme Yöntemi ve Kart Formu */}
-          <div className="glass-card" style={{ padding: '2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+          {/* Payment Method */}
+          <div className="glass-card" style={{ padding: '1.85rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                <CreditCard size={20} color="var(--primary)" />
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Ödeme Yöntemi</h2>
+                <Landmark size={20} color="var(--primary)" />
+                <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Ödeme Yöntemi</h2>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--accent-emerald)', fontSize: '0.78rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--accent-emerald)', fontSize: '0.76rem' }}>
                 <Lock size={13} />
-                <span>256-Bit SSL Güvenli Bağlantı</span>
+                <span>Doğrulanmış Banka Transferi</span>
               </div>
             </div>
 
-            {/* Ödeme Seçenekleri Butonları */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('credit_card')}
-                style={{
-                  border: `1px solid ${paymentMethod === 'credit_card' ? 'var(--primary)' : 'var(--border-subtle)'}`,
-                  background: paymentMethod === 'credit_card' ? 'rgba(0, 240, 255, 0.08)' : 'var(--bg-elevated)',
-                  padding: '1rem',
-                  borderRadius: 'var(--radius-md)',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  color: 'var(--text-main)'
-                }}
-              >
-                <div style={{ fontWeight: 700, fontSize: '0.92rem' }}>Kredi / Banka Kartı</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.2rem' }}>
-                  3D Secure Doğrulamalı Anında Teslimat
-                </div>
-              </button>
-
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem', marginBottom: '1.25rem' }}>
               <button
                 type="button"
                 onClick={() => setPaymentMethod('wire_transfer')}
                 style={{
-                  border: `1px solid ${paymentMethod === 'wire_transfer' ? 'var(--primary)' : 'var(--border-subtle)'}`,
+                  border: `1.5px solid ${paymentMethod === 'wire_transfer' ? 'var(--primary)' : 'var(--border-subtle)'}`,
                   background: paymentMethod === 'wire_transfer' ? 'rgba(0, 240, 255, 0.08)' : 'var(--bg-elevated)',
-                  padding: '1rem',
+                  padding: '0.95rem',
                   borderRadius: 'var(--radius-md)',
                   cursor: 'pointer',
                   textAlign: 'left',
                   color: 'var(--text-main)'
                 }}
               >
-                <div style={{ fontWeight: 700, fontSize: '0.92rem' }}>Kurumsal Havale / EFT</div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.2rem' }}>
-                  Banka transferi ile faturalı sipariş
+                <div style={{ fontWeight: 700, fontSize: '0.92rem' }}>Banka Havalesi / EFT / FAST</div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                  IBAN ile 7/24 komisyonsuz güvenli ödeme
+                </div>
+              </button>
+
+              <button
+                type="button"
+                disabled={!posEnabled}
+                onClick={() => posEnabled && setPaymentMethod('credit_card')}
+                style={{
+                  border: `1px solid ${paymentMethod === 'credit_card' ? 'var(--primary)' : 'var(--border-subtle)'}`,
+                  background: 'var(--bg-elevated)',
+                  opacity: posEnabled ? 1 : 0.55,
+                  padding: '0.95rem',
+                  borderRadius: 'var(--radius-md)',
+                  cursor: posEnabled ? 'pointer' : 'not-allowed',
+                  textAlign: 'left',
+                  color: 'var(--text-main)'
+                }}
+              >
+                <div style={{ fontWeight: 700, fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <CreditCard size={15} /> Kredi / Banka Kartı
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-dim)', marginTop: '0.2rem' }}>
+                  {posEnabled
+                    ? `Aktif Sanal POS (${paymentSettings?.virtualPosProvider.toUpperCase()})`
+                    : 'Yakında (Sanal POS henüz aktif değildir)'}
                 </div>
               </button>
             </div>
 
-            {/* Kart Formu */}
-            {paymentMethod === 'credit_card' ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div className="form-group">
-                  <label className="form-label">Kart Üzerindeki İsim</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="AD SOYAD"
-                    value={cardHolder}
-                    onChange={(e) => setCardHolder(e.target.value.toUpperCase())}
-                    className="form-input"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Kart Numarası</label>
-                  <input
-                    type="text"
-                    required
-                    inputMode="numeric"
-                    maxLength={19}
-                    placeholder="4543 6000 0000 0000"
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
-                    className="form-input"
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div className="form-group">
-                    <label className="form-label">Son Kullanma (AA/YY)</label>
-                    <input
-                      type="text"
-                      required
-                      maxLength={5}
-                      placeholder="AA/YY"
-                      value={cardExpiry}
-                      onChange={(e) => setCardExpiry(e.target.value)}
-                      className="form-input"
-                    />
+            {/* Bank IBAN Details Box */}
+            <div
+              style={{
+                background: 'var(--bg-elevated)',
+                border: '1px solid rgba(0, 240, 255, 0.22)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.85rem'
+              }}
+            >
+              {paymentSettings?.iban ? (
+                <>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '0.6rem' }}>
+                    <div>
+                      <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Banka &amp; Hesap Sahibi</div>
+                      <div style={{ fontWeight: 700, fontSize: '0.96rem', color: 'var(--text-main)' }}>
+                        {paymentSettings.bankName || 'Banka Hesabı'} — {paymentSettings.accountHolder || 'Hesap Sahibi'}
+                      </div>
+                      {paymentSettings.branchOrSwift && (
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-dim)' }}>{paymentSettings.branchOrSwift}</div>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="form-group">
-                    <label className="form-label">Güvenlik Kodu (CVV)</label>
-                    <input
-                      type="password"
-                      required
-                      inputMode="numeric"
-                      maxLength={4}
-                      placeholder="•••"
-                      value={cardCvv}
-                      onChange={(e) => setCardCvv(e.target.value)}
-                      className="form-input"
-                    />
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '0.6rem',
+                      background: '#070b14',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: '8px',
+                      padding: '0.75rem 0.9rem'
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-dim)' }}>IBAN</div>
+                      <code style={{ fontSize: '0.96rem', fontWeight: 700, color: 'var(--primary)', fontFamily: 'var(--font-mono)' }}>
+                        {paymentSettings.iban}
+                      </code>
+                    </div>
+                    <button type="button" onClick={handleCopyIban} className="btn btn-secondary btn-sm" style={{ fontSize: '0.74rem' }}>
+                      {copiedIban ? <Check size={13} color="var(--accent-emerald)" /> : <Copy size={13} />}
+                      <span>{copiedIban ? 'IBAN Kopyalandı' : 'IBAN Kopyala'}</span>
+                    </button>
                   </div>
+                </>
+              ) : (
+                <div style={{ fontSize: '0.84rem', color: 'var(--accent-amber)' }}>
+                  IBAN bilgisi yönetici panelinden henüz girilmemiştir. Siparişi oluşturduğunuzda ödeme hesap bilgileri yetkili iletişim adresinizle paylaşılır (sudemkavuzkoz005@gmail.com).
                 </div>
+              )}
+
+              {paymentSettings?.transferNote && (
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
+                  * {paymentSettings.transferNote}
+                </p>
+              )}
+
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Havale Gönderen Adı / Dekont Referans Notu (Opsiyonel)</label>
+                <input
+                  type="text"
+                  placeholder="Ödemeyi yapacak kişi veya dekont referans no"
+                  value={transferReference}
+                  onChange={(e) => setTransferReference(e.target.value)}
+                  className="form-input"
+                />
               </div>
-            ) : (
-              <div style={{ background: 'var(--bg-elevated)', padding: '1.25rem', borderRadius: 'var(--radius-md)', fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: '1.6' }}>
-                <div><strong>Alıcı:</strong> SDM Software Yazılım Çözümleri</div>
-                <div><strong>İletişim & Fatura Onayı:</strong> sudemkavuzkoz005@gmail.com</div>
-                <div style={{ marginTop: '0.5rem', fontSize: '0.78rem', color: 'var(--accent-amber)' }}>
-                  * Kurumsal Havale / EFT talebi oluşturulduktan sonra üretilen sipariş numaranızı ödeme açıklamasına ekleyebilirsiniz; fatura ve IBAN detayları destek ekibimizce teyit edilir.
-                </div>
-              </div>
-            )}
+            </div>
           </div>
         </div>
 
-        {/* Sağ Sütun: Sipariş Özeti ve Onay Butonu */}
+        {/* Right: Order Summary */}
         <div>
-          <div className="glass-card" style={{ padding: '2rem', position: 'sticky', top: '6rem' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1.25rem' }}>Ödenecek Sipariş Özeti</h2>
+          <div className="glass-card" style={{ padding: '1.85rem', position: 'sticky', top: '6rem' }}>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '1.15rem' }}>Ödenecek Sipariş Özeti</h2>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem', maxHeight: '220px', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem', marginBottom: '1.2rem', maxHeight: '220px', overflowY: 'auto' }}>
               {items.map((i) => (
-                <div key={`${i.product.id}-${i.licenseTier}`} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                <div key={`${i.product.id}-${i.licenseTier}`} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', gap: '0.6rem' }}>
                   <div>
                     <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{i.product.title}</div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--primary)' }}>
-                      {i.licenseTier} x {i.quantity}
+                      {i.licenseTier.toUpperCase()} x {i.quantity}
                     </div>
                   </div>
-                  <div style={{ fontWeight: 700 }}>
+                  <div style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
                     {(i.unitPrice * i.quantity).toLocaleString('tr-TR')} ₺
                   </div>
                 </div>
               ))}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+            {/* Coupon Box */}
+            <div style={{ marginBottom: '1.15rem', paddingTop: '0.85rem', borderTop: '1px solid var(--border-subtle)' }}>
+              <div style={{ display: 'flex', gap: '0.45rem' }}>
+                <input
+                  type="text"
+                  value={couponInput}
+                  onChange={(e) => setCouponInput(e.target.value)}
+                  placeholder="İndirim kuponu"
+                  className="form-input"
+                  style={{ fontSize: '0.78rem', padding: '0.42rem 0.65rem' }}
+                />
+                {couponCode ? (
+                  <button type="button" onClick={removeCoupon} className="btn btn-secondary btn-sm" style={{ whiteSpace: 'nowrap', fontSize: '0.74rem' }}>
+                    Kaldır
+                  </button>
+                ) : (
+                  <button type="button" onClick={handleApplyCoupon} className="btn btn-secondary btn-sm" style={{ whiteSpace: 'nowrap', fontSize: '0.74rem' }}>
+                    <Tag size={12} /> Uygula
+                  </button>
+                )}
+              </div>
+              {couponFeedback && (
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>{couponFeedback}</div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', paddingTop: '0.85rem', borderTop: '1px solid var(--border-subtle)', marginBottom: '1.35rem', fontSize: '0.86rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
                 <span>Ara Toplam</span>
                 <span>{subtotal.toLocaleString('tr-TR')} ₺</span>
               </div>
               {discountAmount > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--accent-emerald)' }}>
-                  <span>İndirim Tutarı</span>
+                  <span>İndirim ({couponCode})</span>
                   <span>-{discountAmount.toLocaleString('tr-TR')} ₺</span>
                 </div>
               )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-main)', paddingTop: '0.5rem', borderTop: '1px solid var(--border-subtle)' }}>
-                <span>Genel Toplam</span>
-                <span className="text-cyan">{total.toLocaleString('tr-TR')} ₺</span>
+              {taxRate > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
+                  <span>{pricesIncludeTax ? `KDV (Dahil %${taxRate})` : `KDV (+%${taxRate})`}</span>
+                  <span>{computedTaxAmount.toLocaleString('tr-TR')} ₺</span>
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-main)', paddingTop: '0.5rem', borderTop: '1px solid var(--border-subtle)' }}>
+                <span>Ödenecek Toplam</span>
+                <span className="text-cyan">{finalPayableTotal.toLocaleString('tr-TR')} ₺</span>
               </div>
             </div>
 
@@ -461,17 +527,17 @@ export default function CheckoutPage() {
               type="submit"
               disabled={isProcessing}
               className="btn btn-primary"
-              style={{ width: '100%', padding: '0.9rem', fontSize: '1.05rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+              style={{ width: '100%', padding: '0.85rem', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
             >
-              <ShieldCheck size={20} />
+              <ShieldCheck size={19} />
               <span>
-                {paymentMethod === 'wire_transfer'
-                  ? `Havale Siparişi Oluştur (${total.toLocaleString('tr-TR')} ₺)`
-                  : `${total.toLocaleString('tr-TR')} ₺ Ödemeyi Onayla`}
+                {isProcessing
+                  ? 'Sipariş Oluşturuluyor...'
+                  : `Havale / EFT Siparişini Oluştur (${finalPayableTotal.toLocaleString('tr-TR')} ₺)`}
               </span>
             </button>
 
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', textAlign: 'center', marginTop: '1rem', lineHeight: '1.5' }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', textAlign: 'center', marginTop: '0.9rem', lineHeight: '1.5' }}>
               Devam ederek{' '}
               <Link href="/legal/mesafeli-satis" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>
                 Mesafeli Satış Sözleşmesi
@@ -485,68 +551,6 @@ export default function CheckoutPage() {
           </div>
         </div>
       </form>
-
-      {/* 3D SECURE SMS DOĞRULAMA MODALI (SİMÜLASYON) */}
-      {is3DSecureOpen && (
-        <div
-          className="modal-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-label="3D Secure Güvenlik Onayı"
-          onClick={() => !isProcessing && setIs3DSecureOpen(false)}
-        >
-          <div className="modal-content" style={{ maxWidth: '440px', padding: '2rem', position: 'relative' }} onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              aria-label="Kapat"
-              disabled={isProcessing}
-              onClick={() => setIs3DSecureOpen(false)}
-              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
-            >
-              <X size={20} />
-            </button>
-
-            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-              <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(0, 240, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-                <Smartphone size={28} color="var(--primary)" />
-              </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)' }}>3D Secure Güvenlik Onayı</h3>
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>
-                Bankanız tarafından <strong>{customerPhone}</strong> numaralı telefonunuza iletilen 6 haneli doğrulama kodunu giriniz (Simülasyon: 192837):
-              </p>
-            </div>
-
-            <div style={{ background: 'var(--bg-elevated)', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1.25rem', textAlign: 'center' }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>Ödeme Tutarı:</div>
-              <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--primary)' }}>
-                {total.toLocaleString('tr-TR')} ₺
-              </div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>İşyeri: SDM Software (sdmsoftware.com.tr)</div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" style={{ textAlign: 'center' }}>SMS Onay Kodu</label>
-              <input
-                type="text"
-                value={smsCode}
-                onChange={(e) => setSmsCode(e.target.value)}
-                style={{ textAlign: 'center', letterSpacing: '0.3em', fontSize: '1.3rem', fontWeight: 800 }}
-                className="form-input"
-              />
-            </div>
-
-            <button
-              type="button"
-              onClick={handleConfirm3DSecure}
-              disabled={isProcessing}
-              className="btn btn-primary"
-              style={{ width: '100%', padding: '0.85rem' }}
-            >
-              {isProcessing ? 'Ödeme Doğrulanıyor...' : 'Doğrula ve Siparişi Tamamla'}
-            </button>
-          </div>
-        </div>
-      )}
 
       <style jsx>{`
         @media (max-width: 900px) {

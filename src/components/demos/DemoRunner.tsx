@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Check,
   Crown,
@@ -9,6 +10,8 @@ import {
   Globe,
   KeyRound,
   Lock,
+  LogIn,
+  Mail,
   Palette,
   Settings2,
   ShieldCheck,
@@ -18,13 +21,15 @@ import {
 } from 'lucide-react';
 import { DemoProject, MembershipTier } from '@/lib/types';
 import { useAuth } from '@/context/AuthContext';
+import { useCart } from '@/context/CartContext';
 import {
   BRAND_COLOR_PRESETS,
   canCustomizeBranding,
   CUSTOM_MODULE_OPTIONS,
   getTierLabel,
   hasDemoUnlock,
-  MEMBERSHIP_PLANS
+  MEMBERSHIP_PLANS,
+  planToCartProduct
 } from '@/lib/membership';
 import AiTravelPlannerApp from './AiTravelPlannerApp';
 import StockPredictionApp from './StockPredictionApp';
@@ -38,12 +43,14 @@ interface DemoRunnerProps {
 }
 
 export default function DemoRunner({ demo, fullHeight = false }: DemoRunnerProps) {
+  const router = useRouter();
+  const { addToCart, closeCart } = useCart();
   const {
     user,
+    authLoading,
     isAuthenticated,
     registerAccount,
     loginAccount,
-    upgradeMembership,
     activateLicenseKey,
     saveBrandingConfig,
     trackDemoAction
@@ -152,27 +159,11 @@ export default function DemoRunner({ demo, fullHeight = false }: DemoRunnerProps
     });
   };
 
-  const handleUpgradePlan = async (tier: Exclude<MembershipTier, 'free'>) => {
-    if (!isAuthenticated) {
-      setModalFeedback({ type: 'err', text: 'Önce yukarıdan hızlıca üye olun veya giriş yapın.' });
-      return;
-    }
-    setActionBusy(true);
-    setModalFeedback(null);
-    const res = await upgradeMembership(tier, demo.slug);
-    setActionBusy(false);
-    if (!res.success) {
-      setModalFeedback({ type: 'err', text: res.error || 'Yükseltme yapılamadı.' });
-      return;
-    }
-    setModalFeedback({
-      type: 'ok',
-      text: `Tebrikler! ${getTierLabel(tier)} aktif edildi. Artık sınırsız kullanım ve beyaz-etiket kişiselleştirme açık.`
-    });
-    setTimeout(() => {
-      setShowUpgradeModal(false);
-      setModalFeedback(null);
-    }, 1100);
+  const handleUpgradePlan = (tier: Exclude<MembershipTier, 'free'>) => {
+    addToCart(planToCartProduct(tier, demo.slug), 'standard');
+    closeCart();
+    setShowUpgradeModal(false);
+    router.push('/checkout');
   };
 
   const handleActivateLicense = async (e: React.FormEvent) => {
@@ -268,6 +259,186 @@ export default function DemoRunner({ demo, fullHeight = false }: DemoRunnerProps
   };
 
   const activeAccent = isUnlocked && user?.branding?.accentColor ? user.branding.accentColor : '#00f0ff';
+
+  if (authLoading) {
+    return (
+      <div
+        style={{
+          background: '#080d18',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: fullHeight ? '0' : '16px',
+          padding: '3.5rem 1.5rem',
+          textAlign: 'center',
+          color: 'var(--text-muted)'
+        }}
+      >
+        Üyelik oturumunuz doğrulanıyor...
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div
+        style={{
+          background: 'linear-gradient(135deg, #070b14 0%, #0d1526 100%)',
+          border: '1px solid rgba(0, 240, 255, 0.28)',
+          borderRadius: fullHeight ? '0' : '16px',
+          padding: '2.5rem 1.5rem',
+          minHeight: fullHeight ? 'calc(100vh - 60px)' : '480px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <div
+          className="glass-card"
+          style={{
+            width: '100%',
+            maxWidth: '490px',
+            padding: '2rem 1.75rem',
+            borderColor: 'rgba(0, 240, 255, 0.35)'
+          }}
+        >
+          <div className="glow-accent" />
+          <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+            <div
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                background: 'rgba(0, 240, 255, 0.12)',
+                border: '1px solid rgba(0, 240, 255, 0.35)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 0.85rem'
+              }}
+            >
+              <Mail size={22} color="#00f0ff" />
+            </div>
+            <span className="badge badge-cyan" style={{ fontSize: '0.68rem', marginBottom: '0.45rem' }}>
+              E-POSTA İLE DEMO ERİŞİMİ
+            </span>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f8fafc' }}>
+              Demoyu Kullanmak İçin Giriş Yapın
+            </h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.35rem', lineHeight: 1.5 }}>
+              <strong>{demo.title}</strong> sistemini kullanmadan önce e-posta adresinizle giriş yapın veya ücretsiz hesap oluşturun. Kaydınız veritabanına işlenir ve 5 ücretsiz deneme hakkı tanımlanır.
+            </p>
+          </div>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '0.45rem',
+              background: '#080c15',
+              padding: '0.3rem',
+              borderRadius: '10px',
+              border: '1px solid var(--border-subtle)',
+              marginBottom: '1rem'
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode('login');
+                setModalFeedback(null);
+              }}
+              className={`btn btn-sm ${authMode === 'login' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ border: 'none', fontSize: '0.78rem' }}
+            >
+              <LogIn size={13} /> Giriş Yap
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAuthMode('register');
+                setModalFeedback(null);
+              }}
+              className={`btn btn-sm ${authMode === 'register' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ border: 'none', fontSize: '0.78rem' }}
+            >
+              <UserPlus size={13} /> Kaydol
+            </button>
+          </div>
+
+          {modalFeedback && (
+            <div
+              role="alert"
+              style={{
+                marginBottom: '0.85rem',
+                padding: '0.6rem 0.8rem',
+                borderRadius: '8px',
+                fontSize: '0.78rem',
+                background: modalFeedback.type === 'ok' ? 'rgba(16,185,129,0.14)' : 'rgba(244,63,94,0.14)',
+                border: `1px solid ${modalFeedback.type === 'ok' ? 'rgba(16,185,129,0.4)' : 'rgba(244,63,94,0.4)'}`,
+                color: modalFeedback.type === 'ok' ? '#6ee7b7' : '#fda4af'
+              }}
+            >
+              {modalFeedback.text}
+            </div>
+          )}
+
+          <form onSubmit={handleQuickAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+            {authMode === 'register' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+                <div>
+                  <label className="form-label">Ad Soyad *</label>
+                  <input type="text" required minLength={2} placeholder="Ad Soyad" value={qName} onChange={(e) => setQName(e.target.value)} className="form-input" />
+                </div>
+                <div>
+                  <label className="form-label">Firma / Klinik</label>
+                  <input type="text" placeholder="Opsiyonel" value={qCompany} onChange={(e) => setQCompany(e.target.value)} className="form-input" />
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="form-label">E-Posta Adresi *</label>
+              <input
+                type="email"
+                required
+                placeholder="eposta@adresiniz.com"
+                value={qEmail}
+                onChange={(e) => setQEmail(e.target.value)}
+                className="form-input"
+              />
+            </div>
+
+            <div>
+              <label className="form-label">Şifre *</label>
+              <input
+                type="password"
+                required
+                minLength={authMode === 'register' ? 6 : 4}
+                placeholder={authMode === 'register' ? 'En az 6 karakter' : 'Şifreniz'}
+                value={qPass}
+                onChange={(e) => setQPass(e.target.value)}
+                className="form-input"
+              />
+            </div>
+
+            <button type="submit" disabled={actionBusy} className="btn btn-primary" style={{ width: '100%', marginTop: '0.25rem' }}>
+              {actionBusy ? 'Doğrulanıyor...' : authMode === 'register' ? 'E-Posta ile Kaydol & Demoyu Aç' : 'E-Posta ile Giriş Yap & Demoyu Aç'}
+            </button>
+          </form>
+
+          <div style={{ marginTop: '1rem', textAlign: 'center', fontSize: '0.74rem', color: 'var(--text-dim)' }}>
+            Tam ekran giriş sayfasına gitmek için{' '}
+            <Link href={`/auth/login?redirect=/live/${demo.slug}`} style={{ color: 'var(--primary)', fontWeight: 600 }}>
+              Giriş Sayfası
+            </Link>
+            {' • '}
+            <Link href={`/auth/register?redirect=/live/${demo.slug}`} style={{ color: 'var(--primary)', fontWeight: 600 }}>
+              Kayıt Sayfası
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -588,7 +759,7 @@ export default function DemoRunner({ demo, fullHeight = false }: DemoRunnerProps
                     className="btn btn-primary btn-sm"
                     style={{ width: '100%', fontSize: '0.74rem' }}
                   >
-                    {plan.id === 'enterprise_license' ? 'Lisans Oluştur & Aktif Et' : 'Üyeliği Hemen Başlat'}
+                    {plan.id === 'enterprise_license' ? 'Lisans Satın Al (IBAN Ödeme)' : 'Sepete Ekle & IBAN ile Öde →'}
                   </button>
                 </div>
               ))}

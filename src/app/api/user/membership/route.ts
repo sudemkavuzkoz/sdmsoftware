@@ -43,6 +43,15 @@ export async function POST(request: Request) {
     }
 
     if (body.action === 'upgrade_membership') {
+      if (user.role !== 'admin') {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Doğrudan üyelik aktivasyonu yalnızca yönetici onayıyla veya Sepet / Havale-EFT ödemesiyle yapılır.'
+          },
+          { status: 403 }
+        );
+      }
       const tier = body.tier;
       if (!tier || !['pro_monthly', 'pro_yearly', 'enterprise_license'].includes(tier)) {
         return NextResponse.json({ success: false, error: 'Geçersiz üyelik paketi.' }, { status: 400 });

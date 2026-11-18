@@ -73,6 +73,7 @@ export interface Order {
   paymentMethod: 'credit_card' | 'iyzico' | 'stripe' | 'wire_transfer';
   paymentStatus: 'paid' | 'pending' | 'failed';
   orderStatus: 'completed' | 'processing' | 'refunded';
+  transferReference?: string;
   licenseKeys: { [productId: string]: string };
   createdAt: string;
 }
@@ -96,7 +97,7 @@ export interface UserLicenseGrant {
   targetSlug: string;
   productTitle: string;
   tier: 'standard' | 'commercial' | 'extended' | 'premium';
-  status: 'active' | 'revoked';
+  status: 'pending' | 'active' | 'revoked';
   grantedAt: string;
   expiresAt?: string;
 }
@@ -115,6 +116,20 @@ export interface User {
   licenses: UserLicenseGrant[];
   branding: UserBrandingConfig;
   createdAt: string;
+}
+
+export interface PaymentSettings {
+  wireTransferEnabled: boolean;
+  bankName: string;
+  accountHolder: string;
+  iban: string;
+  branchOrSwift?: string;
+  transferNote: string;
+  virtualPosEnabled: boolean;
+  virtualPosProvider: 'none' | 'iyzico' | 'paytr';
+  taxRatePct: number;
+  pricesIncludeTax: boolean;
+  updatedAt: string;
 }
 
 export interface TrendyolStoreSettings {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { 
   BarChart3, 
@@ -21,15 +21,17 @@ import {
   AlertCircle,
   LogOut,
   KeyRound,
-  Users
+  Users,
+  Landmark,
+  CreditCard
 } from 'lucide-react';
 import { db } from '@/lib/db';
-import { Product, DemoProject, Order, ProductCategory, DemoCategory, User, MembershipTier } from '@/lib/types';
+import { Product, DemoProject, Order, ProductCategory, DemoCategory, User, MembershipTier, PaymentSettings } from '@/lib/types';
 import { getTierLabel } from '@/lib/membership';
 import { useAuth } from '@/context/AuthContext';
 
 export default function AdminPage() {
-  const { isAdmin, loginAsAdmin, logout, changeAdminPassword } = useAuth();
+  const { user, isAdmin, loginAsAdmin, logout, changeAdminPassword } = useAuth();
 
   // Şifre Giriş Durumu
   const [passwordInput, setPasswordInput] = useState('');
@@ -72,11 +74,73 @@ export default function AdminPage() {
   const [demos, setDemos] = useState<DemoProject[]>(db.getDemos());
   const [orders, setOrders] = useState<Order[]>(db.getOrders());
   const [registeredUsers, setRegisteredUsers] = useState<User[]>([]);
-  const [stats, setStats] = useState(db.getStats());
   const [trendyolSettings, setTrendyolSettings] = useState(db.getTrendyolSettings());
 
+  const stats = useMemo(
+    () => ({
+      totalRevenue: orders.filter((o) => o.paymentStatus === 'paid').reduce((sum, o) => sum + o.total, 0),
+      totalOrders: orders.length,
+      totalProducts: products.length,
+      totalDemos: demos.length,
+      totalDemoViews: demos.reduce((sum, d) => sum + d.viewsCount, 0)
+    }),
+    [orders, products, demos]
+  );
+
+  // Ödeme & IBAN Ayarları
+  const [paySettings, setPaySettings] = useState<PaymentSettings>({
+    wireTransferEnabled: true,
+    bankName: '',
+    accountHolder: '',
+    iban: '',
+    branchOrSwift: '',
+    transferNote: 'Havale / EFT açıklamasına sipariş numaranızı (SDM-...) yazınız.',
+    virtualPosEnabled: false,
+    virtualPosProvider: 'none',
+    taxRatePct: 20,
+    pricesIncludeTax: true,
+    updatedAt: ''
+  });
+  const [paySaving, setPaySaving] = useState(false);
+  const [payNotice, setPayNotice] = useState<{ ok: boolean; msg: string } | null>(null);
+
   // Aktif Sekme
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'demos' | 'orders' | 'members' | 'trendyol'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'demos' | 'orders' | 'members' | 'payment' | 'trendyol'>('overview');
+
+  const loadPaymentSettings = () => {
+    fetch('/api/settings/payment', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((data: { success?: boolean; settings?: PaymentSettings }) => {
+        if (data.success && data.settings) {
+          setPaySettings(data.settings);
+        }
+      })
+      .catch(() => {});
+  };
+
+  const handleSavePaymentSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPaySaving(true);
+    setPayNotice(null);
+    try {
+      const res = await fetch('/api/settings/payment', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(paySettings)
+      });
+      const data = (await res.json()) as { success?: boolean; settings?: PaymentSettings; error?: string };
+      setPaySaving(false);
+      if (!res.ok || !data.success || !data.settings) {
+        setPayNotice({ ok: false, msg: data.error || 'Ödeme ayarları kaydedilemedi.' });
+        return;
+      }
+      setPaySettings(data.settings);
+      setPayNotice({ ok: true, msg: 'IBAN ve ödeme ayarları veritabanına kaydedildi! /checkout üzerinde anında geçerlidir.' });
+    } catch {
+      setPaySaving(false);
+      setPayNotice({ ok: false, msg: 'Sunucuya bağlanılamadı.' });
+    }
+  };
 
   const loadDbMembers = () => {
     fetch('/api/admin/users', { cache: 'no-store' })
@@ -85,19 +149,56 @@ export default function AdminPage() {
         if (data.success && data.users) {
           setRegisteredUsers(data.users);
         }
-        if (data.success && data.orders?.length) {
-          setOrders((prev) => {
-            const seen = new Set<string>();
-            return [...data.orders!, ...prev].filter((o) => {
+        if (data.success && Array.isArray(data.orders)) {
+          const clientOnly = db.getOrders();
+          const seen = new Set<string>();
+          setOrders(
+            [...data.orders, ...clientOnly].filter((o) => {
               if (seen.has(o.id)) return false;
               seen.add(o.id);
               return true;
-            });
-          });
+            })
+          );
         }
       })
       .catch(() => {});
   };
+
+  useEffect(() => {
+    if (user?.role !== 'admin') return;
+    let active = true;
+    fetch('/api/admin/users', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((data: { success?: boolean; users?: User[]; orders?: Order[] }) => {
+        if (!active) return;
+        if (data.success && data.users) setRegisteredUsers(data.users);
+        if (data.success && Array.isArray(data.orders)) {
+          const clientOnly = db.getOrders();
+          const seen = new Set<string>();
+          setOrders(
+            [...data.orders, ...clientOnly].filter((o) => {
+              if (seen.has(o.id)) return false;
+              seen.add(o.id);
+              return true;
+            })
+          );
+        }
+      })
+      .catch(() => {});
+
+    fetch('/api/settings/payment', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((data: { success?: boolean; settings?: PaymentSettings }) => {
+        if (active && data.success && data.settings) {
+          setPaySettings(data.settings);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   const handleUpdateUserTier = async (userId: string, membershipTier: MembershipTier) => {
     try {
@@ -140,9 +241,9 @@ export default function AdminPage() {
   const refreshData = () => {
     setProducts([...db.getProducts()]);
     setDemos([...db.getDemos()]);
-    setOrders([...db.getOrders()]);
-    setStats(db.getStats());
     setTrendyolSettings(db.getTrendyolSettings());
+    loadDbMembers();
+    loadPaymentSettings();
   };
 
   // Standart Ürün Ekleme
@@ -252,10 +353,31 @@ export default function AdminPage() {
     }
   };
 
-  // Sipariş Durumu Güncelleme
-  const handleUpdateOrderStatus = (orderId: string, status: Order['orderStatus']) => {
-    db.updateOrderStatus(orderId, status);
-    refreshData();
+  // Sipariş Durumu Güncelleme & Havale Onayı (Veritabanı Senkronlu)
+  const handleUpdateOrderStatus = async (
+    orderId: string,
+    status: Order['orderStatus'],
+    paymentStatus?: Order['paymentStatus']
+  ) => {
+    db.updateOrderStatus(orderId, status, paymentStatus);
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, orderStatus: status, paymentStatus })
+      });
+      const data = (await res.json()) as { success?: boolean; order?: Order; users?: User[] };
+      if (data.success && data.order) {
+        setOrders((prev) => prev.map((o) => (o.id === data.order!.id ? data.order! : o)));
+      } else {
+        loadDbMembers();
+      }
+      if (data.success && data.users) {
+        setRegisteredUsers(data.users);
+      }
+    } catch {
+      loadDbMembers();
+    }
   };
 
   if (!isAdmin) {
@@ -495,6 +617,16 @@ export default function AdminPage() {
         >
           <Users size={15} /> Kayıtlı Üyeler &amp; Lisanslar
         </button>
+        <button
+          onClick={() => {
+            setActiveTab('payment');
+            loadPaymentSettings();
+          }}
+          className={`btn btn-sm ${activeTab === 'payment' ? 'btn-primary' : 'btn-secondary'}`}
+          style={activeTab !== 'payment' ? { color: 'var(--accent-emerald)', borderColor: 'rgba(16, 185, 129, 0.4)' } : undefined}
+        >
+          <Landmark size={15} /> Ödeme &amp; IBAN Ayarları
+        </button>
       </div>
 
       {/* SEKME 1: GENEL BAKIŞ */}
@@ -529,6 +661,9 @@ export default function AdminPage() {
               </button>
               <button onClick={() => { setActiveTab('members'); loadDbMembers(); }} className="btn btn-secondary" style={{ justifyContent: 'flex-start', color: 'var(--primary)' }}>
                 <Users size={16} /> Kayıtlı Üyeler &amp; Lisansları Görüntüle
+              </button>
+              <button onClick={() => { setActiveTab('payment'); loadPaymentSettings(); }} className="btn btn-secondary" style={{ justifyContent: 'flex-start', color: 'var(--accent-emerald)', borderColor: 'rgba(16,185,129,0.35)' }}>
+                <Landmark size={16} /> Banka IBAN &amp; Ödeme Ayarlarını Düzenle
               </button>
             </div>
           </div>
@@ -800,36 +935,68 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {orders.map(o => (
-                  <tr key={o.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                    <td style={{ padding: '1rem', fontWeight: 700, color: 'var(--primary)' }}>{o.orderNumber}</td>
-                    <td style={{ padding: '1rem' }}>
-                      <div style={{ fontWeight: 600 }}>{o.customerName}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{o.customerEmail} • {o.customerPhone}</div>
-                    </td>
-                    <td style={{ padding: '1rem', fontSize: '0.82rem' }}>
-                      {o.items.map(i => `${i.product.title} (${i.licenseTier})`).join(', ')}
-                    </td>
-                    <td style={{ padding: '1rem', fontWeight: 800, color: 'var(--text-main)' }}>
-                      {o.total.toLocaleString('tr-TR')} ₺
-                    </td>
-                    <td style={{ padding: '1rem' }}>
-                      <span className="badge badge-emerald">{o.paymentStatus}</span>
-                    </td>
-                    <td style={{ padding: '1rem' }}>
-                      <select
-                        value={o.orderStatus}
-                        onChange={(e) => handleUpdateOrderStatus(o.id, e.target.value as Order['orderStatus'])}
-                        className="form-select"
-                        style={{ padding: '0.35rem 0.6rem', fontSize: '0.78rem' }}
-                      >
-                        <option value="completed">Tamamlandı</option>
-                        <option value="processing">İşleniyor</option>
-                        <option value="refunded">İptal / İade</option>
-                      </select>
+                {orders.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      Henüz gelen sipariş bulunmuyor.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  orders.map(o => (
+                    <tr key={o.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                      <td style={{ padding: '1rem', fontWeight: 700, color: 'var(--primary)' }}>
+                        <div>{o.orderNumber}</div>
+                        <div style={{ fontSize: '0.68rem', color: 'var(--text-dim)', fontWeight: 500 }}>
+                          {o.paymentMethod === 'wire_transfer' ? 'Havale / EFT' : 'Kart'}
+                        </div>
+                      </td>
+                      <td style={{ padding: '1rem' }}>
+                        <div style={{ fontWeight: 600 }}>{o.customerName}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{o.customerEmail} • {o.customerPhone}</div>
+                        {o.transferReference && (
+                          <div style={{ fontSize: '0.72rem', color: 'var(--accent-amber)', marginTop: '0.15rem' }}>
+                            Dekont / Gönderen: {o.transferReference}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ padding: '1rem', fontSize: '0.82rem' }}>
+                        {o.items.map(i => `${i.product.title} (${i.licenseTier})`).join(', ')}
+                      </td>
+                      <td style={{ padding: '1rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                        {o.total.toLocaleString('tr-TR')} ₺
+                      </td>
+                      <td style={{ padding: '1rem' }}>
+                        <span className={`badge ${o.paymentStatus === 'paid' ? 'badge-emerald' : o.paymentStatus === 'failed' ? 'badge-purple' : 'badge-amber'}`}>
+                          {o.paymentStatus === 'paid' ? 'Ödendi' : o.paymentStatus === 'failed' ? 'İptal' : 'Havale Bekliyor'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '1rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                          {o.paymentStatus === 'pending' && (
+                            <button
+                              type="button"
+                              onClick={() => void handleUpdateOrderStatus(o.id, 'completed', 'paid')}
+                              className="btn btn-sm btn-primary"
+                              style={{ fontSize: '0.72rem', padding: '0.28rem 0.6rem', whiteSpace: 'nowrap' }}
+                            >
+                              Ödemeyi Onayla &amp; Lisansı Aç
+                            </button>
+                          )}
+                          <select
+                            value={o.orderStatus}
+                            onChange={(e) => void handleUpdateOrderStatus(o.id, e.target.value as Order['orderStatus'])}
+                            className="form-select"
+                            style={{ padding: '0.35rem 0.6rem', fontSize: '0.78rem' }}
+                          >
+                            <option value="completed">Tamamlandı</option>
+                            <option value="processing">İşleniyor</option>
+                            <option value="refunded">İptal / İade</option>
+                          </select>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -918,6 +1085,140 @@ export default function AdminPage() {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* SEKME: ÖDEME & IBAN AYARLARI */}
+      {activeTab === 'payment' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+          <form onSubmit={handleSavePaymentSettings} className="glass-card" style={{ padding: '1.85rem', display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.25rem' }}>
+              <Landmark size={20} color="var(--accent-emerald)" />
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Banka IBAN &amp; Havale/EFT Ayarları</h2>
+            </div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+              Buraya girdiğiniz banka ve IBAN bilgileri veritabanına kaydedilir ve müşterilerinizin ödeme ekranında (<code style={{ color: 'var(--primary)' }}>/checkout</code>) kopyalanabilir olarak gösterilir.
+            </p>
+
+            {payNotice && (
+              <div
+                style={{
+                  padding: '0.7rem 0.9rem',
+                  borderRadius: '8px',
+                  fontSize: '0.8rem',
+                  background: payNotice.ok ? 'rgba(16, 185, 129, 0.14)' : 'rgba(244, 63, 94, 0.14)',
+                  border: `1px solid ${payNotice.ok ? 'rgba(16, 185, 129, 0.4)' : 'rgba(244, 63, 94, 0.4)'}`,
+                  color: payNotice.ok ? 'var(--accent-emerald)' : 'var(--accent-rose)'
+                }}
+              >
+                {payNotice.msg}
+              </div>
+            )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Banka Adı</label>
+                <input
+                  type="text"
+                  placeholder="Örn: Ziraat Bankası / Enpara"
+                  value={paySettings.bankName}
+                  onChange={(e) => setPaySettings((p) => ({ ...p, bankName: e.target.value }))}
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Hesap Sahibi / Alıcı Ünvanı</label>
+                <input
+                  type="text"
+                  placeholder="Ad Soyad veya Firma Ünvanı"
+                  value={paySettings.accountHolder}
+                  onChange={(e) => setPaySettings((p) => ({ ...p, accountHolder: e.target.value }))}
+                  className="form-input"
+                />
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">IBAN Numarası (TR ile başlayan 26 hane)</label>
+              <input
+                type="text"
+                placeholder="TR00 0000 0000 0000 0000 0000 00"
+                value={paySettings.iban}
+                onChange={(e) => setPaySettings((p) => ({ ...p, iban: e.target.value.toUpperCase() }))}
+                className="form-input"
+                style={{ fontFamily: 'var(--font-mono)' }}
+              />
+            </div>
+
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Şube / SWIFT (Opsiyonel)</label>
+              <input
+                type="text"
+                placeholder="Örn: Levent Ticari Şube"
+                value={paySettings.branchOrSwift ?? ''}
+                onChange={(e) => setPaySettings((p) => ({ ...p, branchOrSwift: e.target.value }))}
+                className="form-input"
+              />
+            </div>
+
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Ödeme Açıklama Talimatı</label>
+              <textarea
+                rows={2}
+                value={paySettings.transferNote}
+                onChange={(e) => setPaySettings((p) => ({ ...p, transferNote: e.target.value }))}
+                className="form-textarea"
+                style={{ minHeight: '70px' }}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">KDV Oranı (%)</label>
+                <select
+                  value={paySettings.taxRatePct}
+                  onChange={(e) => setPaySettings((p) => ({ ...p, taxRatePct: Number(e.target.value) }))}
+                  className="form-select"
+                >
+                  <option value={0}>%0 (KDV Muaf / Yok)</option>
+                  <option value={10}>%10 KDV</option>
+                  <option value={20}>%20 KDV</option>
+                </select>
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Fiyatlandırma Tipi</label>
+                <select
+                  value={paySettings.pricesIncludeTax ? 'included' : 'excluded'}
+                  onChange={(e) => setPaySettings((p) => ({ ...p, pricesIncludeTax: e.target.value === 'included' }))}
+                  className="form-select"
+                >
+                  <option value="included">Fiyatlara KDV Dahil</option>
+                  <option value="excluded">Sepette +KDV Ekle</option>
+                </select>
+              </div>
+            </div>
+
+            <button type="submit" disabled={paySaving} className="btn btn-primary" style={{ marginTop: '0.35rem' }}>
+              {paySaving ? 'Kaydediliyor...' : 'Ödeme ve IBAN Ayarlarını Kaydet'}
+            </button>
+          </form>
+
+          {/* Sanal POS Durumu Bilgilendirme Kartı */}
+          <div className="glass-card" style={{ padding: '1.85rem', alignSelf: 'start', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <CreditCard size={20} color="var(--primary)" />
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Kredi Kartı / Sanal POS Durumu</h3>
+            </div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              Şu anda aktif bir Sanal POS anlaşmanız olmadığı için kredi kartı seçeneği müşterilere dürüstçe <strong>&quot;Yakında (Sanal POS Bekleniyor)&quot;</strong> olarak gösterilir ve tüm ödemeler gerçek IBAN Havale/EFT hesabınız üzerinden alınır.
+            </p>
+            <div style={{ background: 'var(--bg-elevated)', borderRadius: '10px', padding: '1rem', fontSize: '0.8rem', color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+              <div><strong>Havale Sipariş Onay Süreci:</strong></div>
+              <div>1. Müşteri sepetteki ürün veya Premium plan için Havale siparişi oluşturur.</div>
+              <div>2. Siparişinizde <em>&quot;Havale Bekliyor&quot;</em> olarak görünür; müşteriye henüz lisans açılmaz.</div>
+              <div>3. Bankanızdan IBAN&apos;ınıza tutar geldiğinde <strong>Siparişler → Ödemeyi Onayla &amp; Lisansı Aç</strong> butonuna bastığınız an müşterinin lisansı otomatik aktif olur.</div>
+            </div>
           </div>
         </div>
       )}

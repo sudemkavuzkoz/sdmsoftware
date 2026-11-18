@@ -229,7 +229,7 @@ const INITIAL_DEMOS: DemoProject[] = [
       'Web Audio ses efektleri ve yerel tarayıcı kayıt desteği'
     ],
     techStack: ['HTML5 Canvas', 'CSS3', 'JavaScript', 'Procedural SVG'],
-    liveUrl: '/demos/pati-bahcesi/index.html',
+    liveUrl: '/live/pati-bahcesi-demo',
     githubUrl: 'https://github.com/sudemkavuzkoz/Pati-Bah-esi',
     previewType: 'iframe',
     status: 'active',
