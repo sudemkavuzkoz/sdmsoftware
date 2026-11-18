@@ -1,16 +1,22 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  AlertTriangle,
-  Clock,
-  Plus,
-  Users,
-  UserCog,
   Activity,
+  AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  Clock,
   ExternalLink,
-  X,
-  ArrowRight
+  Layers,
+  Plus,
+  Search,
+  Send,
+  Sparkles,
+  UserCog,
+  Users,
+  X
 } from 'lucide-react';
 
 type ImpressionType = 'conventional' | 'digital';
@@ -37,9 +43,12 @@ type JobStatus =
 
 interface ProtezJob {
   id: string;
+  caseCode: string;
   patient_name: string;
+  doctor_name: string;
   prosthesis_type: ProsthesisType;
   due_date: string;
+  isUrgentTomorrow: boolean;
   status: JobStatus;
   impression_type: ImpressionType;
   vita_shade: string;
@@ -50,7 +59,7 @@ interface ProtezJob {
 interface ActionLog {
   id: string;
   job_id: string;
-  action_type: 'JOB_CREATED' | 'STATUS_CHANGED';
+  action_type: 'JOB_CREATED' | 'STATUS_CHANGED' | 'NOTE_ADDED';
   description: string;
   created_at: string;
   performed_by: string;
@@ -86,146 +95,225 @@ const PROSTHESIS_LABELS: Record<ProsthesisType, string> = {
   laminate_veneer: 'Laminate Veneer'
 };
 
-function offsetIsoDate(daysFromNow: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + daysFromNow);
-  return d.toISOString();
-}
+const QUICK_FDI_TEETH = [11, 12, 13, 14, 15, 16, 21, 22, 23, 24, 25, 26, 36, 37, 46, 47];
 
-function getInitialJobs(): ProtezJob[] {
-  return [
-    {
-      id: '1',
-      patient_name: 'Ahmet Yılmaz',
-      prosthesis_type: 'zirconia',
-      due_date: offsetIsoDate(1),
-      status: 'cad_design',
-      impression_type: 'digital',
-      vita_shade: 'A2',
-      tooth_numbers: [11, 21],
-      medical_notes: 'Ön bölge estetik zirkonyum — yarın provaya hazır olmalı.'
-    },
-    {
-      id: '2',
-      patient_name: 'Ayşe Demir',
-      prosthesis_type: 'metal_porcelain',
-      due_date: offsetIsoDate(2),
-      status: 'lab_received_model',
-      impression_type: 'conventional',
-      vita_shade: 'B1',
-      tooth_numbers: [36, 37],
-      medical_notes: 'Alt çene arka köprü metal altyapı.'
-    },
-    {
-      id: '3',
-      patient_name: 'Mehmet Kaya',
-      prosthesis_type: 'implant_supported',
-      due_date: offsetIsoDate(1),
-      status: 'zirconia_framework_try_in',
-      impression_type: 'digital',
-      vita_shade: 'A1',
-      tooth_numbers: [14, 15, 16],
-      medical_notes: 'İmplant üstü vidalı zirkonyum restorasyon.'
-    },
-    {
-      id: '4',
-      patient_name: 'Fatma Kara',
-      prosthesis_type: 'removable_denture',
-      due_date: offsetIsoDate(3),
-      status: 'wax_try_in',
-      impression_type: 'conventional',
-      vita_shade: 'A3',
-      tooth_numbers: [11, 12, 13, 21, 22, 23],
-      medical_notes: 'Üst çene tam protez mumlu kapanış kontrolü.'
-    }
-  ];
-}
+const INITIAL_JOBS: ProtezJob[] = [
+  {
+    id: '1',
+    caseCode: 'ADSP-2601',
+    patient_name: 'Ahmet Yılmaz',
+    doctor_name: 'Dt. Kadir Kurt',
+    prosthesis_type: 'zirconia',
+    due_date: 'Yarın (09:30)',
+    isUrgentTomorrow: true,
+    status: 'cad_design',
+    impression_type: 'digital',
+    vita_shade: 'A2',
+    tooth_numbers: [11, 21],
+    medical_notes: 'Ön bölge estetik monolitik zirkonyum — insizal şeffaflık yüksek tutulsun.'
+  },
+  {
+    id: '2',
+    caseCode: 'ADSP-2602',
+    patient_name: 'Ayşe Demir',
+    doctor_name: 'Dt. Selin Kaya',
+    prosthesis_type: 'metal_porcelain',
+    due_date: '2 Gün Sonra',
+    isUrgentTomorrow: false,
+    status: 'lab_received_model',
+    impression_type: 'conventional',
+    vita_shade: 'B1',
+    tooth_numbers: [36, 37],
+    medical_notes: 'Alt çene arka köprü metal altyapı dökümü ve marjin uyumu kontrolü.'
+  },
+  {
+    id: '3',
+    caseCode: 'ADSP-2603',
+    patient_name: 'Mehmet Kaya',
+    doctor_name: 'Dt. Kadir Kurt',
+    prosthesis_type: 'implant_supported',
+    due_date: 'Yarın (14:00)',
+    isUrgentTomorrow: true,
+    status: 'zirconia_framework_try_in',
+    impression_type: 'digital',
+    vita_shade: 'A1',
+    tooth_numbers: [14, 15, 16],
+    medical_notes: 'Ti-Base abutment üzeri vidalı zirkonyum köprü.'
+  },
+  {
+    id: '4',
+    caseCode: 'ADSP-2604',
+    patient_name: 'Fatma Kara',
+    doctor_name: 'Dt. Caner Eren',
+    prosthesis_type: 'removable_denture',
+    due_date: '3 Gün Sonra',
+    isUrgentTomorrow: false,
+    status: 'wax_try_in',
+    impression_type: 'conventional',
+    vita_shade: 'A3',
+    tooth_numbers: [11, 12, 13, 21, 22, 23],
+    medical_notes: 'Üst çene tam protez mumlu dikey boyut & gülüş hattı provası.'
+  },
+  {
+    id: '5',
+    caseCode: 'ADSP-2605',
+    patient_name: 'Deniz Aksoy',
+    doctor_name: 'Dt. Kadir Kurt',
+    prosthesis_type: 'laminate_veneer',
+    due_date: 'Teslim Edildi',
+    isUrgentTomorrow: false,
+    status: 'delivered',
+    impression_type: 'digital',
+    vita_shade: 'BL2',
+    tooth_numbers: [11, 12, 21, 22],
+    medical_notes: 'Ultra ince E-max yaprak porselen seti sorunsuz yapıştırıldı.'
+  }
+];
 
-function getInitialLogs(): ActionLog[] {
-  return [
-    {
-      id: '101',
-      job_id: '1',
-      action_type: 'JOB_CREATED',
-      description: 'Dt. Kadir Kurt (doctor) yeni dijital zirkonyum iş emri oluşturdu.',
-      created_at: offsetIsoDate(-2),
-      performed_by: 'Dt. Kadir Kurt'
-    },
-    {
-      id: '102',
-      job_id: '2',
-      action_type: 'STATUS_CHANGED',
-      description: "Ali Can (technician) iş durumunu 'pending' aşamasından 'lab_received_model' aşamasına güncelledi.",
-      created_at: offsetIsoDate(-1),
-      performed_by: 'Ali Can'
-    }
-  ];
-}
+const INITIAL_LOGS: ActionLog[] = [
+  {
+    id: '101',
+    job_id: '1',
+    action_type: 'JOB_CREATED',
+    description: 'Dt. Kadir Kurt dijital zirkonyum iş emri (ADSP-2601) oluşturdu.',
+    created_at: '18.11.2026 • 09:15',
+    performed_by: 'Dt. Kadir Kurt'
+  },
+  {
+    id: '102',
+    job_id: '2',
+    action_type: 'STATUS_CHANGED',
+    description: "Ali Can (Teknisyen) işi 'Ölçü Alındı' aşamasından 'Laboratuvarda / Model' aşamasına güncelledi.",
+    created_at: '18.11.2026 • 11:40',
+    performed_by: 'Ali Can (Teknisyen)'
+  },
+  {
+    id: '103',
+    job_id: '3',
+    action_type: 'STATUS_CHANGED',
+    description: 'CAM kazıma tamamlandı; Zirkonyum / Altyapı Provası aşamasına geçirildi.',
+    created_at: '18.11.2026 • 15:20',
+    performed_by: 'Ali Can (Teknisyen)'
+  }
+];
 
 export default function ProtezTakipApp({ fullHeight = false }: { fullHeight?: boolean }) {
   const [roleView, setRoleView] = useState<'clinic' | 'technician'>('clinic');
   const [activeTab, setActiveTab] = useState<ImpressionType>('digital');
-  const [jobs, setJobs] = useState<ProtezJob[]>(getInitialJobs);
-  const [logs, setLogs] = useState<ActionLog[]>(getInitialLogs);
+  const [jobs, setJobs] = useState<ProtezJob[]>(INITIAL_JOBS);
+  const [logs, setLogs] = useState<ActionLog[]>(INITIAL_LOGS);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
 
-  // Yeni Vaka Modalı
+  const [searchQuery, setSearchQuery] = useState('');
+  const [prosthesisFilter, setProsthesisFilter] = useState<'all' | ProsthesisType>('all');
+  const [urgentOnly, setUrgentOnly] = useState(false);
+  const [drawerNoteDraft, setDrawerNoteDraft] = useState('');
+  const [toast, setToast] = useState<string | null>(null);
+
+  // New Case Modal State
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [newPatientName, setNewPatientName] = useState('');
   const [newImpression, setNewImpression] = useState<ImpressionType>('digital');
   const [newProsthesis, setNewProsthesis] = useState<ProsthesisType>('zirconia');
   const [newShade, setNewShade] = useState('A2');
-  const [newTeeth, setNewTeeth] = useState('11, 21');
+  const [newSelectedTeeth, setNewSelectedTeeth] = useState<number[]>([11, 21]);
   const [newDueOffset, setNewDueOffset] = useState('1');
   const [newNotes, setNewNotes] = useState('');
 
   const stages = activeTab === 'conventional' ? CONVENTIONAL_STAGES : DIGITAL_STAGES;
-  const filteredJobs = jobs.filter((j) => j.impression_type === activeTab);
-  const selectedJob = jobs.find((j) => j.id === selectedJobId) ?? null;
 
-  // TomorrowDueAlert logic from protez-takip-sistemi-adsp
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowDateStr = tomorrow.toISOString().split('T')[0];
-  const dueTomorrowJobs = jobs.filter(
-    (j) => j.status !== 'delivered' && new Date(j.due_date).toISOString().split('T')[0] === tomorrowDateStr
-  );
+  const filteredJobs = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return jobs.filter((j) => {
+      if (j.impression_type !== activeTab) return false;
+      if (prosthesisFilter !== 'all' && j.prosthesis_type !== prosthesisFilter) return false;
+      if (urgentOnly && (!j.isUrgentTomorrow || j.status === 'delivered')) return false;
+      if (!q) return true;
+      return (
+        j.patient_name.toLowerCase().includes(q) ||
+        j.caseCode.toLowerCase().includes(q) ||
+        j.tooth_numbers.join(',').includes(q)
+      );
+    });
+  }, [jobs, activeTab, prosthesisFilter, urgentOnly, searchQuery]);
+
+  const selectedJob = jobs.find((j) => j.id === selectedJobId) ?? null;
+  const dueTomorrowJobs = jobs.filter((j) => j.status !== 'delivered' && j.isUrgentTomorrow);
+
+  const metrics = useMemo(() => {
+    const active = jobs.filter((j) => j.status !== 'delivered').length;
+    const digitalCount = jobs.filter((j) => j.impression_type === 'digital').length;
+    const digitalPct = Math.round((digitalCount / Math.max(1, jobs.length)) * 100);
+    const deliveredCount = jobs.filter((j) => j.status === 'delivered').length;
+    return { active, urgent: dueTomorrowJobs.length, digitalPct, deliveredCount };
+  }, [jobs, dueTomorrowJobs.length]);
+
+  const formatNow = () => {
+    const d = new Date();
+    return `${d.toLocaleDateString('tr-TR')} • ${d.toTimeString().slice(0, 5)}`;
+  };
 
   const handleStatusChange = (jobId: string, newStatus: JobStatus) => {
     const target = jobs.find((j) => j.id === jobId);
     if (!target) return;
+    const stageLabel =
+      [...CONVENTIONAL_STAGES, ...DIGITAL_STAGES].find((s) => s.status === newStatus)?.label ?? newStatus;
     setJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status: newStatus } : j)));
     setLogs((prev) => [
       {
         id: String(Date.now()),
         job_id: jobId,
         action_type: 'STATUS_CHANGED',
-        description: `Ali Can (technician) ${target.patient_name} vakasını '${target.status}' aşamasından '${newStatus}' aşamasına ilerletti.`,
-        created_at: new Date().toISOString(),
+        description: `Ali Can (Teknisyen) ${target.patient_name} (${target.caseCode}) vakasını '${stageLabel}' aşamasına taşıdı.`,
+        created_at: formatNow(),
         performed_by: 'Ali Can (Teknisyen)'
       },
       ...prev
     ]);
+    setToast(`${target.patient_name} (${target.caseCode}) '${stageLabel}' aşamasına alındı.`);
+  };
+
+  const handleAddDrawerNote = () => {
+    if (!selectedJob || !drawerNoteDraft.trim()) return;
+    const actor = roleView === 'clinic' ? 'Dt. Kadir Kurt (Hekim)' : 'Ali Can (Teknisyen)';
+    setLogs((prev) => [
+      {
+        id: String(Date.now()),
+        job_id: selectedJob.id,
+        action_type: 'NOTE_ADDED',
+        description: drawerNoteDraft.trim(),
+        created_at: formatNow(),
+        performed_by: actor
+      },
+      ...prev
+    ]);
+    setDrawerNoteDraft('');
+    setToast(`${selectedJob.caseCode} işlem kronolojisine not eklendi.`);
+  };
+
+  const toggleNewTooth = (num: number) => {
+    setNewSelectedTeeth((prev) => (prev.includes(num) ? prev.filter((x) => x !== num) : [...prev, num].sort((a, b) => a - b)));
   };
 
   const handleCreateJob = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPatientName.trim()) return;
     const initialStatus: JobStatus = newImpression === 'conventional' ? 'pending' : 'digital_scan_received';
-    const parsedTeeth = newTeeth
-      .split(',')
-      .map((s) => parseInt(s.trim(), 10))
-      .filter((n) => !Number.isNaN(n));
+    const nextId = String(Date.now());
+    const caseCode = `ADSP-${String(2606 + jobs.length)}`;
 
     const created: ProtezJob = {
-      id: String(Date.now()),
+      id: nextId,
+      caseCode,
       patient_name: newPatientName.trim(),
+      doctor_name: 'Dt. Kadir Kurt',
       prosthesis_type: newProsthesis,
       impression_type: newImpression,
       vita_shade: newShade,
-      due_date: offsetIsoDate(parseInt(newDueOffset, 10) || 1),
+      due_date: newDueOffset === '1' ? 'Yarın (Acil)' : `${newDueOffset} Gün Sonra`,
+      isUrgentTomorrow: newDueOffset === '1',
       status: initialStatus,
-      tooth_numbers: parsedTeeth.length > 0 ? parsedTeeth : [11],
+      tooth_numbers: newSelectedTeeth.length > 0 ? newSelectedTeeth : [11],
       medical_notes: newNotes.trim() || undefined
     };
 
@@ -235,16 +323,18 @@ export default function ProtezTakipApp({ fullHeight = false }: { fullHeight?: bo
         id: String(Date.now() + 1),
         job_id: created.id,
         action_type: 'JOB_CREATED',
-        description: `Dt. Kadir Kurt (doctor) ${created.patient_name} için ${PROSTHESIS_LABELS[created.prosthesis_type]} iş emri oluşturdu.`,
-        created_at: new Date().toISOString(),
+        description: `Dt. Kadir Kurt ${created.patient_name} (${caseCode}) için ${PROSTHESIS_LABELS[created.prosthesis_type]} iş emri oluşturdu.`,
+        created_at: formatNow(),
         performed_by: 'Dt. Kadir Kurt'
       },
       ...prev
     ]);
     setActiveTab(newImpression);
+    setSelectedJobId(created.id);
     setNewPatientName('');
     setNewNotes('');
     setIsNewModalOpen(false);
+    setToast(`${caseCode} — ${created.patient_name} iş emri laboratuvara gönderildi.`);
   };
 
   return (
@@ -254,19 +344,19 @@ export default function ProtezTakipApp({ fullHeight = false }: { fullHeight?: bo
         flexDirection: 'column',
         borderRadius: fullHeight ? '0' : 'var(--radius-lg)',
         overflow: 'hidden',
-        border: fullHeight ? 'none' : '1px solid rgba(148,163,184,0.2)',
-        background: '#f8fafc',
-        color: '#0f172a',
-        minHeight: fullHeight ? '100vh' : '640px',
+        border: fullHeight ? 'none' : '1px solid var(--border-subtle)',
+        background: '#060a14',
+        color: '#f8fafc',
+        minHeight: fullHeight ? '100vh' : '680px',
         position: 'relative'
       }}
     >
       {/* Top Role Switcher & GitHub/Vercel Header */}
-      <div
+      <header
         style={{
-          background: '#0f172a',
-          color: '#e2e8f0',
-          padding: '0.7rem 1.25rem',
+          background: 'linear-gradient(90deg, #0b1322 0%, #101b2e 100%)',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          padding: '0.85rem 1.25rem',
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
@@ -275,53 +365,73 @@ export default function ProtezTakipApp({ fullHeight = false }: { fullHeight?: bo
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <strong style={{ color: '#fff', fontSize: '0.95rem', letterSpacing: '0.02em' }}>
-            KADİR KURT ADSP
-          </strong>
-          <span style={{ fontSize: '0.72rem', color: roleView === 'clinic' ? '#60a5fa' : '#fbbf24', fontWeight: 700, background: 'rgba(255,255,255,0.08)', padding: '0.18rem 0.55rem', borderRadius: '999px' }}>
-            {roleView === 'clinic' ? 'Klinik Yönetim Paneli' : 'Laboratuvar / Teknisyen Paneli'}
-          </span>
+          <div
+            style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '10px',
+              background: 'linear-gradient(135deg, rgba(99,102,241,0.28), rgba(0,240,255,0.22))',
+              border: '1px solid rgba(99,102,241,0.45)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <Layers size={19} color="#a5b4fc" />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <strong style={{ color: '#fff', fontSize: '0.98rem' }}>
+                ADSP Protez Takip &amp; CAD/CAM Laboratuvar OS
+              </strong>
+              <span
+                style={{
+                  fontSize: '0.68rem',
+                  color: roleView === 'clinic' ? '#00f0ff' : '#fbbf24',
+                  fontWeight: 700,
+                  background: roleView === 'clinic' ? 'rgba(0,240,255,0.1)' : 'rgba(245,158,11,0.14)',
+                  border: `1px solid ${roleView === 'clinic' ? 'rgba(0,240,255,0.35)' : 'rgba(245,158,11,0.35)'}`,
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: '999px'
+                }}
+              >
+                {roleView === 'clinic' ? 'Klinik Hekim Görünümü' : 'Teknisyen Laboratuvar Görünümü'}
+              </span>
+            </div>
+            <p style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+              8 Aşamalı Konvansiyonel &amp; Dijital İş Akışı • VITA Renk Takibi • Canlı İşlem Kronolojisi
+            </p>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.45rem' }}>
           <button
             type="button"
             onClick={() => setRoleView('clinic')}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              padding: '0.38rem 0.8rem',
-              fontSize: '0.76rem',
-              fontWeight: 700,
-              borderRadius: '8px',
-              border: 'none',
-              cursor: 'pointer',
-              background: roleView === 'clinic' ? '#2563eb' : '#1e293b',
-              color: '#fff'
-            }}
+            className={`btn btn-sm ${roleView === 'clinic' ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ fontSize: '0.73rem', padding: '0.38rem 0.75rem' }}
           >
-            <Users size={14} /> Hekim / Klinik Paneli
+            <Users size={13} /> Hekim / Klinik
           </button>
           <button
             type="button"
             onClick={() => setRoleView('technician')}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              padding: '0.38rem 0.8rem',
-              fontSize: '0.76rem',
-              fontWeight: 700,
-              borderRadius: '8px',
-              border: roleView === 'technician' ? '1px solid #f59e0b' : '1px solid #334155',
-              cursor: 'pointer',
-              background: roleView === 'technician' ? '#d97706' : '#1e293b',
-              color: '#fff'
-            }}
+            className={`btn btn-sm ${roleView === 'technician' ? 'btn-purple' : 'btn-secondary'}`}
+            style={{ fontSize: '0.73rem', padding: '0.38rem 0.75rem' }}
           >
-            <UserCog size={14} /> Laboratuvar / Teknisyen Paneli
+            <UserCog size={13} /> Laboratuvar Teknisyeni
           </button>
+
+          {roleView === 'clinic' && (
+            <button
+              type="button"
+              onClick={() => setIsNewModalOpen(true)}
+              className="btn btn-primary btn-sm"
+              style={{ fontSize: '0.73rem', padding: '0.38rem 0.75rem' }}
+            >
+              <Plus size={13} /> Yeni Vaka Emri
+            </button>
+          )}
 
           <a
             href={
@@ -331,100 +441,98 @@ export default function ProtezTakipApp({ fullHeight = false }: { fullHeight?: bo
             }
             target="_blank"
             rel="noopener noreferrer"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.3rem',
-              padding: '0.38rem 0.7rem',
-              fontSize: '0.72rem',
-              fontWeight: 600,
-              borderRadius: '8px',
-              background: 'rgba(16, 185, 129, 0.16)',
-              border: '1px solid rgba(16, 185, 129, 0.4)',
-              color: '#34d399'
-            }}
+            className="btn btn-secondary btn-sm"
+            style={{ fontSize: '0.71rem', padding: '0.38rem 0.65rem', color: '#34d399', borderColor: 'rgba(16,185,129,0.35)' }}
           >
             <ExternalLink size={12} /> Canlı Vercel
           </a>
         </div>
-      </div>
+      </header>
 
-      {/* Sub-header matching protez-takip-sistemi-adsp */}
-      <div
-        style={{
-          background: '#ffffff',
-          borderBottom: '1px solid #e2e8f0',
-          padding: '0.85rem 1.25rem',
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '0.75rem'
-        }}
-      >
-        <div>
-          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1e293b' }}>
-            {roleView === 'clinic' ? 'Vaka Panosu (Hekim Görünümü)' : 'Laboratuvar Panosu (Teknisyen Görünümü)'}
-          </h3>
-          <p style={{ fontSize: '0.74rem', color: '#64748b' }}>
-            {roleView === 'clinic'
-              ? 'Yeni vaka oluşturun ve vakaların üretim aşamalarını canlı izleyin.'
-              : 'Teknisyen olarak vakaların üzerindeki "İlerlet →" butonuyla aşama güncelleyin.'}
-          </p>
+      {/* KPI Strip */}
+      <div style={{ padding: '0.85rem 1.25rem 0', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.7rem' }}>
+        <div style={{ background: '#0c1322', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '0.68rem 0.85rem' }}>
+          <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Aktif Üretimdeki Vakalar</div>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#00f0ff', fontFamily: 'var(--font-mono)' }}>{metrics.active}</div>
+          <div style={{ fontSize: '0.65rem', color: '#64748b' }}>Toplam {jobs.length} iş emri</div>
         </div>
-
-        {roleView === 'clinic' && (
-          <button
-            type="button"
-            onClick={() => setIsNewModalOpen(true)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              background: '#2563eb',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '0.5rem 0.95rem',
-              fontSize: '0.8rem',
-              fontWeight: 700,
-              cursor: 'pointer'
-            }}
-          >
-            <Plus size={15} /> Yeni Vaka Aç
-          </button>
-        )}
+        <div style={{ background: '#0c1322', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '0.68rem 0.85rem' }}>
+          <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Acil (Yarın Teslim)</div>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f43f5e', fontFamily: 'var(--font-mono)' }}>{metrics.urgent}</div>
+          <div style={{ fontSize: '0.65rem', color: '#fda4af' }}>Öncelikli üretim</div>
+        </div>
+        <div style={{ background: '#0c1322', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '0.68rem 0.85rem' }}>
+          <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Dijital CAD/CAM Payı</div>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#a855f7', fontFamily: 'var(--font-mono)' }}>%{metrics.digitalPct}</div>
+          <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>3D İntraoral Tarama</div>
+        </div>
+        <div style={{ background: '#0c1322', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '0.68rem 0.85rem' }}>
+          <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Teslim Edilen Vakalar</div>
+          <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#10b981', fontFamily: 'var(--font-mono)' }}>{metrics.deliveredCount}</div>
+          <div style={{ fontSize: '0.65rem', color: '#10b981' }}>Klinik onayı tamam</div>
+        </div>
       </div>
 
-      {/* Content Area */}
-      <div style={{ flex: 1, padding: '1.15rem', overflowY: 'auto' }}>
+      {/* Toast */}
+      {toast && (
+        <div
+          style={{
+            margin: '0.7rem 1.25rem 0',
+            background: 'rgba(16, 185, 129, 0.14)',
+            border: '1px solid rgba(16, 185, 129, 0.4)',
+            color: '#6ee7b7',
+            borderRadius: '10px',
+            padding: '0.5rem 0.85rem',
+            fontSize: '0.76rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <Sparkles size={13} color="#10b981" /> {toast}
+          </span>
+          <button type="button" onClick={() => setToast(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.72rem' }}>
+            Kapat
+          </button>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div style={{ flex: 1, padding: '0.9rem 1.25rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
         {/* TomorrowDueAlert */}
         {dueTomorrowJobs.length > 0 && (
           <div
             style={{
-              background: '#fef2f2',
-              borderLeft: '4px solid #ef4444',
-              padding: '0.85rem 1rem',
-              borderRadius: '8px',
-              marginBottom: '1rem',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
+              background: 'rgba(244, 63, 94, 0.08)',
+              border: '1px solid rgba(244, 63, 94, 0.35)',
+              borderLeft: '4px solid #f43f5e',
+              padding: '0.75rem 1rem',
+              borderRadius: '10px'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              <AlertTriangle size={18} color="#ef4444" />
-              <strong style={{ color: '#991b1b', fontSize: '0.9rem' }}>
-                DİKKAT: Yarın Gidecek {dueTomorrowJobs.length} İş Var!
-              </strong>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <AlertTriangle size={16} color="#f43f5e" />
+                <strong style={{ color: '#fda4af', fontSize: '0.84rem' }}>
+                  ACİL TESLİMAT UYARISI: Yarın Kliniğe Gidecek {dueTomorrowJobs.length} İş Var!
+                </strong>
+              </div>
+              <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Kartlara tıklayarak detay çekmecesini açın</span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '0.5rem' }}>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.5rem' }}>
               {dueTomorrowJobs.map((job) => (
                 <div
                   key={job.id}
-                  onClick={() => setSelectedJobId(job.id)}
+                  onClick={() => {
+                    setActiveTab(job.impression_type);
+                    setSelectedJobId(job.id);
+                  }}
                   style={{
-                    background: '#fff',
-                    border: '1px solid #fee2e2',
-                    borderRadius: '6px',
+                    background: '#0c1322',
+                    border: '1px solid rgba(244, 63, 94, 0.25)',
+                    borderRadius: '8px',
                     padding: '0.55rem 0.75rem',
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -433,10 +541,14 @@ export default function ProtezTakipApp({ fullHeight = false }: { fullHeight?: bo
                   }}
                 >
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#1e293b' }}>{job.patient_name}</div>
-                    <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{job.prosthesis_type.replace('_', ' ').toUpperCase()}</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.8rem', color: '#f8fafc' }}>
+                      {job.patient_name} <span style={{ color: '#64748b', fontSize: '0.68rem' }}>({job.caseCode})</span>
+                    </div>
+                    <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
+                      {PROSTHESIS_LABELS[job.prosthesis_type]} • {job.vita_shade}
+                    </div>
                   </div>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.68rem', fontWeight: 700, color: '#d97706', background: '#fffbeb', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.66rem', fontWeight: 700, color: '#f59e0b', background: 'rgba(245,158,11,0.14)', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
                     <Clock size={11} /> YARIN
                   </span>
                 </div>
@@ -445,127 +557,164 @@ export default function ProtezTakipApp({ fullHeight = false }: { fullHeight?: bo
           </div>
         )}
 
-        {/* DynamicKanban Container */}
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1rem' }}>
-          {/* Workflow Tabs */}
-          <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid #e2e8f0', marginBottom: '1rem' }}>
-            <button
-              type="button"
-              onClick={() => setActiveTab('conventional')}
-              style={{
-                padding: '0.55rem 0.9rem',
-                fontSize: '0.82rem',
-                fontWeight: 700,
-                background: 'none',
-                border: 'none',
-                borderBottom: activeTab === 'conventional' ? '2px solid #2563eb' : '2px solid transparent',
-                color: activeTab === 'conventional' ? '#2563eb' : '#64748b',
-                cursor: 'pointer'
-              }}
-            >
-              Konvansiyonel İş Akışı ({jobs.filter((j) => j.impression_type === 'conventional').length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('digital')}
-              style={{
-                padding: '0.55rem 0.9rem',
-                fontSize: '0.82rem',
-                fontWeight: 700,
-                background: 'none',
-                border: 'none',
-                borderBottom: activeTab === 'digital' ? '2px solid #2563eb' : '2px solid transparent',
-                color: activeTab === 'digital' ? '#2563eb' : '#64748b',
-                cursor: 'pointer'
-              }}
-            >
-              Dijital İş Akışı ({jobs.filter((j) => j.impression_type === 'digital').length})
-            </button>
+        {/* Kanban Board Controls */}
+        <div style={{ background: '#0c1322', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '0.9rem' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '0.65rem', paddingBottom: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.06)', marginBottom: '0.85rem' }}>
+            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setActiveTab('digital')}
+                className={`btn btn-sm ${activeTab === 'digital' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ fontSize: '0.74rem', padding: '0.35rem 0.75rem' }}
+              >
+                Dijital İş Akışı ({jobs.filter((j) => j.impression_type === 'digital').length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('conventional')}
+                className={`btn btn-sm ${activeTab === 'conventional' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ fontSize: '0.74rem', padding: '0.35rem 0.75rem' }}
+              >
+                Konvansiyonel İş Akışı ({jobs.filter((j) => j.impression_type === 'conventional').length})
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem', alignItems: 'center' }}>
+              <div style={{ position: 'relative' }}>
+                <Search size={12} color="#64748b" style={{ position: 'absolute', left: '0.55rem', top: '50%', transform: 'translateY(-50%)' }} />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Hasta, kod veya diş no..."
+                  className="form-input"
+                  style={{ fontSize: '0.72rem', padding: '0.3rem 0.6rem 0.3rem 1.65rem', width: '175px' }}
+                />
+              </div>
+
+              <select
+                value={prosthesisFilter}
+                onChange={(e) => setProsthesisFilter(e.target.value as typeof prosthesisFilter)}
+                className="form-select"
+                style={{ width: 'auto', fontSize: '0.72rem', padding: '0.3rem 0.55rem' }}
+              >
+                <option value="all">Tüm Protez Tipleri</option>
+                {(Object.keys(PROSTHESIS_LABELS) as ProsthesisType[]).map((pt) => (
+                  <option key={pt} value={pt}>{PROSTHESIS_LABELS[pt]}</option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                onClick={() => setUrgentOnly((v) => !v)}
+                className={`btn btn-sm ${urgentOnly ? 'btn-danger' : 'btn-secondary'}`}
+                style={{ fontSize: '0.7rem', padding: '0.3rem 0.6rem' }}
+              >
+                {urgentOnly ? 'Yalnızca Aciller ✓' : 'Sadece Acil Teslim'}
+              </button>
+            </div>
           </div>
 
           {/* Horizontal Kanban Columns */}
-          <div style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+          <div style={{ display: 'flex', gap: '0.7rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
             {stages.map((stage, stageIdx) => {
               const colJobs = filteredJobs.filter((j) => j.status === stage.status);
               return (
                 <div
                   key={stage.status}
                   style={{
-                    width: '235px',
+                    width: '245px',
                     flexShrink: 0,
-                    background: '#f8fafc',
-                    border: '1px solid #e2e8f0',
+                    background: '#080d18',
+                    border: '1px solid rgba(255,255,255,0.07)',
                     borderRadius: '10px',
                     display: 'flex',
                     flexDirection: 'column'
                   }}
                 >
-                  <div style={{ padding: '0.6rem 0.75rem', borderBottom: '1px solid #e2e8f0', background: '#f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '10px 10px 0 0' }}>
-                    <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#334155' }}>{stage.label}</span>
-                    <span style={{ background: '#e2e8f0', color: '#475569', fontSize: '0.7rem', fontWeight: 700, padding: '0.1rem 0.45rem', borderRadius: '999px' }}>
+                  <div style={{ padding: '0.55rem 0.7rem', borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#111a2e', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '10px 10px 0 0' }}>
+                    <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#cbd5e1' }}>{stage.label}</span>
+                    <span style={{ background: 'rgba(0,240,255,0.12)', color: '#00f0ff', fontSize: '0.68rem', fontWeight: 700, padding: '0.08rem 0.45rem', borderRadius: '999px' }}>
                       {colJobs.length}
                     </span>
                   </div>
 
-                  <div style={{ padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.55rem', minHeight: '110px' }}>
+                  <div style={{ padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', minHeight: '115px' }}>
                     {colJobs.map((job) => (
                       <div
                         key={job.id}
                         onClick={() => setSelectedJobId(job.id)}
                         style={{
-                          background: '#ffffff',
-                          border: selectedJobId === job.id ? '1.5px solid #2563eb' : '1px solid #e2e8f0',
+                          background: '#0e172a',
+                          border: selectedJobId === job.id ? '1.5px solid #00f0ff' : '1px solid rgba(255,255,255,0.08)',
                           borderRadius: '8px',
                           padding: '0.65rem',
-                          cursor: 'pointer',
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+                          cursor: 'pointer'
                         }}
                       >
-                        <div style={{ fontWeight: 700, fontSize: '0.84rem', color: '#0f172a', marginBottom: '0.25rem' }}>
-                          {job.patient_name}
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.7rem', marginBottom: '0.45rem' }}>
-                          <span style={{ background: '#eff6ff', color: '#2563eb', padding: '0.12rem 0.4rem', borderRadius: '4px', fontWeight: 600 }}>
-                            {job.prosthesis_type}
-                          </span>
-                          <span style={{ fontWeight: 700, color: '#334155' }}>Renk: {job.vita_shade}</span>
-                        </div>
-                        <div style={{ fontSize: '0.68rem', color: '#64748b' }}>
-                          Diş No: {job.tooth_numbers.join(', ')}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                          <span style={{ fontSize: '0.65rem', fontFamily: 'var(--font-mono)', color: '#64748b' }}>{job.caseCode}</span>
+                          {job.isUrgentTomorrow && job.status !== 'delivered' && (
+                            <span style={{ fontSize: '0.62rem', fontWeight: 700, color: '#f59e0b' }}>⏰ {job.due_date}</span>
+                          )}
                         </div>
 
-                        {roleView === 'technician' && stageIdx < stages.length - 1 && (
-                          <div style={{ marginTop: '0.5rem', paddingTop: '0.45rem', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end' }}>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleStatusChange(job.id, stages[stageIdx + 1].status);
-                              }}
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.25rem',
-                                fontSize: '0.7rem',
-                                fontWeight: 700,
-                                background: '#2563eb',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '5px',
-                                padding: '0.28rem 0.6rem',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              İlerlet <ArrowRight size={11} />
-                            </button>
+                        <div style={{ fontWeight: 700, fontSize: '0.84rem', color: '#f8fafc', marginBottom: '0.25rem' }}>
+                          {job.patient_name}
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.68rem', marginBottom: '0.35rem' }}>
+                          <span style={{ background: 'rgba(0,240,255,0.12)', color: '#00f0ff', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 600 }}>
+                            {PROSTHESIS_LABELS[job.prosthesis_type].split(' ')[0]}
+                          </span>
+                          <span style={{ fontWeight: 700, color: '#fda4af' }}>VITA: {job.vita_shade}</span>
+                        </div>
+
+                        <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
+                          Diş No: <strong style={{ color: '#e2e8f0', fontFamily: 'var(--font-mono)' }}>{job.tooth_numbers.join(', ')}</strong>
+                        </div>
+
+                        {roleView === 'technician' && (
+                          <div style={{ marginTop: '0.5rem', paddingTop: '0.45rem', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', gap: '0.3rem' }}>
+                            {stageIdx > 0 ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStatusChange(job.id, stages[stageIdx - 1].status);
+                                }}
+                                className="btn btn-sm btn-secondary"
+                                style={{ fontSize: '0.64rem', padding: '0.2rem 0.45rem' }}
+                              >
+                                <ArrowLeft size={10} /> Geri
+                              </button>
+                            ) : <span />}
+
+                            {stageIdx < stages.length - 1 ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStatusChange(job.id, stages[stageIdx + 1].status);
+                                }}
+                                className="btn btn-sm btn-primary"
+                                style={{ fontSize: '0.64rem', padding: '0.2rem 0.5rem' }}
+                              >
+                                İlerlet <ArrowRight size={10} />
+                              </button>
+                            ) : (
+                              <span style={{ fontSize: '0.66rem', color: '#10b981', display: 'inline-flex', alignItems: 'center', gap: '0.2rem', fontWeight: 700 }}>
+                                <CheckCircle2 size={11} /> Teslimde
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>
                     ))}
 
                     {colJobs.length === 0 && (
-                      <div style={{ height: '72px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px dashed #cbd5e1', borderRadius: '8px', fontSize: '0.72rem', color: '#94a3b8' }}>
-                        Vaka yok
+                      <div style={{ height: '72px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '0.7rem', color: '#64748b' }}>
+                        Aşamada vaka yok
                       </div>
                     )}
                   </div>
@@ -584,63 +733,71 @@ export default function ProtezTakipApp({ fullHeight = false }: { fullHeight?: bo
             top: 0,
             right: 0,
             bottom: 0,
-            width: '340px',
-            maxWidth: '92%',
-            background: '#ffffff',
-            borderLeft: '1px solid #e2e8f0',
-            boxShadow: '-8px 0 24px rgba(15,23,42,0.16)',
-            zIndex: 30,
+            width: '360px',
+            maxWidth: '94%',
+            background: '#0b1220',
+            borderLeft: '1px solid rgba(0,240,255,0.3)',
+            boxShadow: '-12px 0 36px rgba(0,0,0,0.6)',
+            zIndex: 35,
             display: 'flex',
             flexDirection: 'column'
           }}
         >
-          <div style={{ padding: '0.9rem 1rem', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ padding: '0.9rem 1rem', background: '#111a2e', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h4 style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f172a' }}>{selectedJob.patient_name}</h4>
-              <div style={{ fontSize: '0.72rem', color: roleView === 'technician' ? '#d97706' : '#64748b', fontWeight: 600 }}>
-                {roleView === 'technician' ? 'Laboratuvar Bilgi Kartı' : 'Vaka Detayı ve İşlem Geçmişi'}
+              <h4 style={{ fontWeight: 800, fontSize: '0.95rem', color: '#f8fafc' }}>
+                {selectedJob.patient_name} <span style={{ color: '#00f0ff', fontFamily: 'var(--font-mono)', fontSize: '0.76rem' }}>{selectedJob.caseCode}</span>
+              </h4>
+              <div style={{ fontSize: '0.72rem', color: roleView === 'technician' ? '#fbbf24' : '#94a3b8' }}>
+                {selectedJob.doctor_name} • {selectedJob.due_date}
               </div>
             </div>
-            <button type="button" onClick={() => setSelectedJobId(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
+            <button type="button" onClick={() => setSelectedJobId(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
               <X size={18} />
             </button>
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
-            <div style={{ background: roleView === 'technician' ? '#fffbeb' : '#eff6ff', border: `1px solid ${roleView === 'technician' ? '#fde68a' : '#bfdbfe'}`, borderRadius: '8px', padding: '0.85rem', marginBottom: '1rem', fontSize: '0.78rem' }}>
-              <div style={{ marginBottom: '0.35rem' }}>
-                Protez Tipi: <strong>{PROSTHESIS_LABELS[selectedJob.prosthesis_type]}</strong>
-              </div>
-              <div style={{ marginBottom: '0.35rem' }}>
-                Ölçü Tipi: <strong>{selectedJob.impression_type === 'digital' ? 'Dijital Tarama' : 'Konvansiyonel Ölçü'}</strong>
-              </div>
-              <div style={{ marginBottom: '0.35rem' }}>
-                VITA Renk Skalası: <strong style={{ color: '#dc2626' }}>{selectedJob.vita_shade}</strong>
-              </div>
-              <div>Diş Numaraları: <strong>{selectedJob.tooth_numbers.join(', ')}</strong></div>
+            <div style={{ background: '#111a2e', border: '1px solid rgba(0,240,255,0.2)', borderRadius: '10px', padding: '0.85rem', marginBottom: '1rem', fontSize: '0.76rem', color: '#cbd5e1' }}>
+              <div style={{ marginBottom: '0.35rem' }}>Protez Tipi: <strong style={{ color: '#fff' }}>{PROSTHESIS_LABELS[selectedJob.prosthesis_type]}</strong></div>
+              <div style={{ marginBottom: '0.35rem' }}>Ölçü Tipi: <strong>{selectedJob.impression_type === 'digital' ? 'Dijital Tarama (STL)' : 'Konvansiyonel Ölçü'}</strong></div>
+              <div style={{ marginBottom: '0.35rem' }}>VITA Renk Skalası: <strong style={{ color: '#fda4af' }}>{selectedJob.vita_shade}</strong></div>
+              <div>Diş Numaraları: <strong style={{ color: '#00f0ff', fontFamily: 'var(--font-mono)' }}>{selectedJob.tooth_numbers.join(', ')}</strong></div>
               {selectedJob.medical_notes && (
-                <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(0,0,0,0.08)', color: '#475569' }}>
-                  Not: {selectedJob.medical_notes}
+                <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.08)', color: '#94a3b8' }}>
+                  <strong>Not:</strong> {selectedJob.medical_notes}
                 </div>
               )}
             </div>
 
-            <h5 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-              <Activity size={14} color="#2563eb" /> İşlem Kronolojisi
+            <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1rem' }}>
+              <input
+                type="text"
+                value={drawerNoteDraft}
+                onChange={(e) => setDrawerNoteDraft(e.target.value)}
+                placeholder="Kronolojiye vaka notu ekle..."
+                className="form-input"
+                style={{ fontSize: '0.74rem', padding: '0.38rem 0.6rem' }}
+              />
+              <button type="button" onClick={handleAddDrawerNote} className="btn btn-sm btn-primary" style={{ padding: '0.38rem 0.65rem' }}>
+                <Send size={12} />
+              </button>
+            </div>
+
+            <h5 style={{ fontSize: '0.82rem', fontWeight: 700, color: '#f8fafc', marginBottom: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <Activity size={14} color="#00f0ff" /> Canlı İşlem Kronolojisi
             </h5>
 
-            <div style={{ borderLeft: '2px solid #e2e8f0', marginLeft: '0.5rem', paddingLeft: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div style={{ borderLeft: '2px solid rgba(0,240,255,0.3)', marginLeft: '0.4rem', paddingLeft: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
               {logs
-                .filter((l) => l.job_id === selectedJob.id || logs.length <= 3)
+                .filter((l) => l.job_id === selectedJob.id || logs.length <= 4)
                 .map((log) => (
-                  <div key={log.id} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.65rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', marginBottom: '0.2rem' }}>
-                      <strong style={{ color: '#1e293b' }}>
-                        {log.action_type === 'JOB_CREATED' ? 'Yeni Vaka' : 'Durum Güncellemesi'}
-                      </strong>
-                      <span style={{ color: '#94a3b8' }}>{new Date(log.created_at).toLocaleDateString('tr-TR')}</span>
+                  <div key={log.id} style={{ background: '#0e172a', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '0.6rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', marginBottom: '0.2rem' }}>
+                      <strong style={{ color: '#00f0ff' }}>{log.performed_by}</strong>
+                      <span style={{ color: '#64748b' }}>{log.created_at}</span>
                     </div>
-                    <p style={{ fontSize: '0.74rem', color: '#475569', lineHeight: 1.45 }}>{log.description}</p>
+                    <p style={{ fontSize: '0.73rem', color: '#cbd5e1', lineHeight: 1.45, margin: 0 }}>{log.description}</p>
                   </div>
                 ))}
             </div>
@@ -654,8 +811,9 @@ export default function ProtezTakipApp({ fullHeight = false }: { fullHeight?: bo
           style={{
             position: 'absolute',
             inset: 0,
-            background: 'rgba(15,23,42,0.55)',
-            zIndex: 40,
+            background: 'rgba(4,8,16,0.78)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 45,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -665,54 +823,47 @@ export default function ProtezTakipApp({ fullHeight = false }: { fullHeight?: bo
           <form
             onSubmit={handleCreateJob}
             style={{
-              background: '#fff',
-              borderRadius: '12px',
+              background: '#0d1526',
+              border: '1px solid rgba(0,240,255,0.35)',
+              borderRadius: '14px',
               width: '100%',
-              maxWidth: '440px',
+              maxWidth: '470px',
               padding: '1.25rem',
-              boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
+              boxShadow: '0 24px 60px rgba(0,0,0,0.6)'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h4 style={{ fontWeight: 800, fontSize: '1rem', color: '#0f172a' }}>Yeni Protez İş Emri Oluştur</h4>
-              <button type="button" onClick={() => setIsNewModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.9rem' }}>
+              <h4 style={{ fontWeight: 800, fontSize: '0.98rem', color: '#f8fafc' }}>Yeni Protez İş Emri Oluştur</h4>
+              <button type="button" onClick={() => setIsNewModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
                 <X size={18} />
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.8rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem', fontSize: '0.78rem' }}>
               <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: '#334155' }}>Hasta Adı Soyadı</label>
+                <label className="form-label">Hasta Adı Soyadı</label>
                 <input
                   type="text"
                   required
                   placeholder="örn: Zeynep Aydın"
                   value={newPatientName}
                   onChange={(e) => setNewPatientName(e.target.value)}
-                  style={{ width: '100%', padding: '0.5rem 0.7rem', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#0f172a' }}
+                  className="form-input"
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: '#334155' }}>Ölçü Tipi</label>
-                  <select
-                    value={newImpression}
-                    onChange={(e) => setNewImpression(e.target.value as ImpressionType)}
-                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#0f172a' }}
-                  >
-                    <option value="digital">Dijital Tarama</option>
+                  <label className="form-label">Ölçü Tipi</label>
+                  <select value={newImpression} onChange={(e) => setNewImpression(e.target.value as ImpressionType)} className="form-select">
+                    <option value="digital">Dijital Tarama (STL)</option>
                     <option value="conventional">Konvansiyonel Ölçü</option>
                   </select>
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: '#334155' }}>Protez Tipi</label>
-                  <select
-                    value={newProsthesis}
-                    onChange={(e) => setNewProsthesis(e.target.value as ProsthesisType)}
-                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#0f172a' }}
-                  >
+                  <label className="form-label">Protez Tipi</label>
+                  <select value={newProsthesis} onChange={(e) => setNewProsthesis(e.target.value as ProsthesisType)} className="form-select">
                     <option value="zirconia">Zirkonyum</option>
                     <option value="metal_porcelain">Metal Porselen</option>
                     <option value="implant_supported">İmplant Üstü</option>
@@ -722,35 +873,18 @@ export default function ProtezTakipApp({ fullHeight = false }: { fullHeight?: bo
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.6rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: '#334155' }}>VITA Renk</label>
-                  <select
-                    value={newShade}
-                    onChange={(e) => setNewShade(e.target.value)}
-                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#0f172a' }}
-                  >
-                    {['A1', 'A2', 'A3', 'B1', 'B2', 'C1', 'D2'].map((s) => (
+                  <label className="form-label">VITA Renk Skalası</label>
+                  <select value={newShade} onChange={(e) => setNewShade(e.target.value)} className="form-select">
+                    {['A1', 'A2', 'A3', 'B1', 'B2', 'C1', 'BL2'].map((s) => (
                       <option key={s}>{s}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: '#334155' }}>Diş No</label>
-                  <input
-                    type="text"
-                    value={newTeeth}
-                    onChange={(e) => setNewTeeth(e.target.value)}
-                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#0f172a' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: '#334155' }}>Teslim</label>
-                  <select
-                    value={newDueOffset}
-                    onChange={(e) => setNewDueOffset(e.target.value)}
-                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#0f172a' }}
-                  >
+                  <label className="form-label">Teslim Önceliği</label>
+                  <select value={newDueOffset} onChange={(e) => setNewDueOffset(e.target.value)} className="form-select">
                     <option value="1">Yarın (Acil)</option>
                     <option value="2">2 Gün Sonra</option>
                     <option value="4">4 Gün Sonra</option>
@@ -759,30 +893,47 @@ export default function ProtezTakipApp({ fullHeight = false }: { fullHeight?: bo
               </div>
 
               <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.25rem', color: '#334155' }}>Hekim Notu</label>
+                <label className="form-label">FDI Diş Numaraları ({newSelectedTeeth.join(', ') || 'Seçiniz'})</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.28rem' }}>
+                  {QUICK_FDI_TEETH.map((t) => {
+                    const active = newSelectedTeeth.includes(t);
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => toggleNewTooth(t)}
+                        style={{
+                          padding: '0.22rem 0.42rem',
+                          borderRadius: '6px',
+                          fontSize: '0.7rem',
+                          fontFamily: 'var(--font-mono)',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          background: active ? '#00f0ff' : '#111a2e',
+                          color: active ? '#041019' : '#94a3b8',
+                          border: active ? '1px solid #00f0ff' : '1px solid rgba(255,255,255,0.1)'
+                        }}
+                      >
+                        {t}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label">Hekim Teknik Notu</label>
                 <input
                   type="text"
-                  placeholder="Opsiyonel tıbbi not..."
+                  placeholder="Marjin bitimi, renk detayı vb..."
                   value={newNotes}
                   onChange={(e) => setNewNotes(e.target.value)}
-                  style={{ width: '100%', padding: '0.5rem 0.7rem', border: '1px solid #cbd5e1', borderRadius: '6px', color: '#0f172a' }}
+                  className="form-input"
                 />
               </div>
 
-              <button
-                type="submit"
-                style={{
-                  marginTop: '0.4rem',
-                  background: '#2563eb',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '0.6rem',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                Vaka Emrini Laboratuvara Gönder
+              <button type="submit" className="btn btn-primary btn-sm" style={{ marginTop: '0.3rem' }}>
+                İş Emrini Laboratuvara Gönder
               </button>
             </div>
           </form>

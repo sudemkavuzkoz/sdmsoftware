@@ -25,9 +25,9 @@ export default function DemoRunner({ demo, fullHeight = false }: DemoRunnerProps
     case 'pati-bahcesi-demo':
       return <PatiBahcesiEmbed fullHeight={fullHeight} />;
     case 'sdm-clinic-system-demo':
-      return <DentalClinicApp />;
+      return <DentalClinicApp fullHeight={fullHeight} />;
     case 'veteriner-klinik-demo':
-      return <VeterinerClinicApp />;
+      return <VeterinerClinicApp fullHeight={fullHeight} />;
     default:
       return (
         <div

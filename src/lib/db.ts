@@ -189,16 +189,16 @@ const INITIAL_DEMOS: DemoProject[] = [
   },
   {
     id: 'demo-protez-adsp',
-    title: 'ADSP Protez Takip Sistemi — Klinik & Laboratuvar Kanban',
+    title: 'ADSP Protez Takip & Laboratuvar OS — 8 Aşamalı Kanban',
     slug: 'protez-takip-sistemi-demo',
     category: 'clinic_system',
-    shortDescription: 'protez-takip-sistemi-adsp reposundaki gerçek Klinik Hekim & Laboratuvar Teknisyen Kanban panosunu, yarın teslim uyarılarını ve işlem kronolojisini deneyimleyin.',
-    fullDescription: 'GitHub reposundan çekilen Kadir Kurt ADSP Protez Takip Sistemi: Konvansiyonel (8 aşamalı) ve Dijital (8 aşamalı) iş akışları, hekim vaka oluşturma, teknisyen aşama ilerletme, VITA renk skalası ve vaka kronolojisi.',
+    shortDescription: 'Hekim/Teknisyen rolleri, Konvansiyonel & Dijital CAD/CAM Kanban, acil teslim uyarıları ve canlı vaka kronolojisi içeren laboratuvar yönetim sistemi.',
+    fullDescription: 'protez-takip-sistemi-adsp reposundaki tüm iş akışlarını gelişmiş koyu-medikal SaaS arayüzünde sunar: Konvansiyonel (8 aşamalı) ve Dijital CAD/CAM (8 aşamalı) Kanban panoları, tıklanabilir FDI diş seçici, vaka filtreleme, VITA renk takibi ve etkileşimli kronoloji.',
     features: [
-      'Klinik (Hekim) ve Laboratuvar (Teknisyen) rol panelleri',
-      'Konvansiyonel ve Dijital 8 aşamalı dinamik Kanban iş akışı',
-      'Yarın teslim edilecek vakalar için otomatik acil uyarı bandı',
-      'Vaka detay çekmecesi ve canlı işlem kronolojisi (ActionTimeline)'
+      'Klinik Hekim ve Laboratuvar Teknisyeni rol panelleri + Canlı Vercel geçişi',
+      'Konvansiyonel ve Dijital CAD/CAM 8 aşamalı ileri/geri Kanban kontrolü',
+      'Yarın teslim edilecek acil vakalar için üst uyarı bandı ve hasta/protez filtresi',
+      'Vaka detay çekmecesinde not ekleme ve canlı işlem kronolojisi'
     ],
     techStack: ['Next.js 16', 'TypeScript', 'Zod Schema', 'Vercel Deployment'],
     liveUrl: 'https://protez-takip-sistemi-adsp.vercel.app/dashboard/clinic',
@@ -239,16 +239,16 @@ const INITIAL_DEMOS: DemoProject[] = [
   },
   {
     id: 'demo-clinic-sys',
-    title: 'SDM Klinik — Canlı Randevu & Hasta Takip Demosu',
+    title: 'SDM Klinik OS — Diş & Poliklinik EMR Yönetim Sistemi',
     slug: 'sdm-clinic-system-demo',
     category: 'clinic_system',
-    shortDescription: 'Doktor takvimi, hasta kartı oluşturma, randevu ekleme ve SMS bilgilendirme akışını canlı deneyimleyin.',
-    fullDescription: 'Poliklinikler, özel klinikler ve diş hekimleri için hazırlanan bu canlı demoda takvim üzerinden yeni hasta randevusu oluşturabilir, SMS onayını simüle edebilir ve hasta geçmişi arayüzünü test edebilirsiniz.',
+    shortDescription: 'İnteraktif 32 diş FDI odontogram, hekim slot matrisi, bekleme salonu sırası, e-Reçete ve GİB e-SMM tahsilat modüllerini canlı test edin.',
+    fullDescription: 'Poliklinikler ve diş klinikleri için geliştirilen kapsamlı EMR ve klinik yönetim arayüzü: Genel Bakış & Sıra Yönetimi, hekim saat matrisi, 32 dişlik interaktif FDI odontogram ile tedavi fiyatlandırma, ICD-10 muayene notu, e-Reçete, GİB e-SMM fatura kesimi ve SMS/WhatsApp otomasyon günlüğü.',
     features: [
-      'İnteraktif hekim takvimi ve saat seçimi',
-      'Hasta kabul ve yeni randevu kartı oluşturma',
-      'Otomatik SMS ve WhatsApp bildirim simülasyonu',
-      'Branş bazlı poliklinik randevu akışı'
+      'İnteraktif 32 Diş FDI Odontogram (çürük, dolgu, kanal, zirkonyum, implant atama)',
+      'Hekim & ünit bazlı randevu takvim matrisi ve canlı bekleme salonu kuyruğu',
+      'Klinik vital bulgular, ICD-10 SOAP muayene notu ve e-Reçete oluşturucu',
+      'Sigorta indirimi hesaplayan GİB e-SMM kasa modülü ve WhatsApp/SMS günlüğü'
     ],
     techStack: ['Next.js 16', 'TypeScript', 'PostgreSQL', 'Twilio API'],
     liveUrl: '/live/sdm-clinic-system-demo',
@@ -267,16 +267,16 @@ const INITIAL_DEMOS: DemoProject[] = [
   },
   {
     id: 'demo-veteriner-sys',
-    title: 'Veteriner Klinik Randevu & Muayene Demosu',
+    title: 'Veteriner Klinik OS — Triyaj, Aşı Pasaportu & Müşahede',
     slug: 'veteriner-klinik-demo',
     category: 'clinic_system',
-    shortDescription: 'Pet sahibi randevu alımı, veteriner hekim onay/iptal kontrolleri ve muayene sonrası tıbbi not ekleme akışını canlı deneyimleyin.',
-    fullDescription: 'Evcil hayvan sahiplerinin online randevu oluşturduğu, veteriner hekimlerin randevuları onaylayıp iptal edebildiği ve muayene sonrası detaylı tıbbi muayene notu ekleyebildiği interaktif klinik yönetim paneli.',
+    shortDescription: 'Pet Sahibi & Veteriner Hekim çift rolü, mikroçip kimlik kartı, vital monitör, aşı karnesi hatırlatıcı ve müşahede ünitesi yönetimi.',
+    fullDescription: 'Veteriner klinikleri için tasarlanmış kapsamlı yönetim sistemi: Pet Sahibi Portalı ile online randevu alma; Veteriner Hekim Paneli ile onay/iptal, canlı triyaj ve vital bulgu (ısı, nabız, solunum) kaydı, mikroçipli aşı pasaportu, yataklı müşahede kafes takibi, hemogram laboratuvarı ve tahsilat akışı.',
     features: [
-      'Hasta/Evcil hayvan randevu alma akışı',
-      'Veteriner hekim panelinden onay, iptal ve muayene başlatma kontrolleri',
-      'Muayene sonu tıbbi teşhis ve not ekleme/düzenleme modülü',
-      'Canlı randevu ve muayene durum istatistikleri'
+      'Veteriner Hekim OS ve Pet Sahibi Portalı arasında anlık canlı senkronizasyon',
+      'Dijital pet kimliği, mikroçip ID, vital bulgu monitörü ve muayene notu editörü',
+      'Tür bazlı Aşı Takvimi, tek tıkla aşı uygulama ve SMS hatırlatma tetikleyici',
+      'Yatan hasta müşahede üniteleri, doz onayları ve Hemogram/Biyokimya grafikleri'
     ],
     techStack: ['React', 'TypeScript', 'Next.js 16'],
     liveUrl: '/live/veteriner-klinik-demo',
