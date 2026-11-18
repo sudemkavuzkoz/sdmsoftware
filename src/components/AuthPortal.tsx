@@ -10,7 +10,6 @@ import {
   LogIn,
   Mail,
   Phone,
-  Sparkles,
   Terminal,
   User,
   UserPlus
@@ -53,21 +52,6 @@ export default function AuthPortal({ defaultMode = 'login' }: { defaultMode?: 'l
       return;
     }
 
-    router.push(redirectTarget.startsWith('/') ? redirectTarget : '/dashboard');
-  };
-
-  const handleQuickDemoLogin = async (demoEmail: string, demoPassword: string) => {
-    setErrorMsg(null);
-    setMode('login');
-    setEmail(demoEmail);
-    setPassword(demoPassword);
-    setSubmitting(true);
-    const res = await loginAccount(demoEmail, demoPassword);
-    setSubmitting(false);
-    if (!res.success) {
-      setErrorMsg(res.error || 'Demo girişi başarısız.');
-      return;
-    }
     router.push(redirectTarget.startsWith('/') ? redirectTarget : '/dashboard');
   };
 
@@ -249,45 +233,20 @@ export default function AuthPortal({ defaultMode = 'login' }: { defaultMode?: 'l
           </button>
         </form>
 
-        {/* Quick Demo Test Logins */}
+        {/* Back to Demos Link */}
         <div
           style={{
-            marginTop: '1.35rem',
-            paddingTop: '1.1rem',
+            marginTop: '1.25rem',
+            paddingTop: '1rem',
             borderTop: '1px solid var(--border-subtle)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.5rem'
+            textAlign: 'center',
+            fontSize: '0.78rem',
+            color: 'var(--text-muted)'
           }}
         >
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <Sparkles size={12} color="var(--primary)" /> Hazır Test Üyelikleriyle Hemen Deneyin:
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={() => handleQuickDemoLogin('musteri@sdmsoftware.com.tr', 'demo1234')}
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '0.72rem', justifyContent: 'flex-start' }}
-            >
-              Ücretsiz Üye Test
-            </button>
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={() => handleQuickDemoLogin('klinik@marmaradis.com', 'marmara2026')}
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '0.72rem', justifyContent: 'flex-start', borderColor: 'rgba(16, 185, 129, 0.4)', color: '#6ee7b7' }}
-            >
-              Premium Klinik Test
-            </button>
-          </div>
-          <div style={{ textAlign: 'center', marginTop: '0.4rem', fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-            <Link href="/demos" style={{ color: 'var(--primary)', fontWeight: 600 }}>
-              Canlı Demoları İncelemeye Dön →
-            </Link>
-          </div>
+          <Link href="/demos" style={{ color: 'var(--primary)', fontWeight: 600 }}>
+            Canlı Demoları İncelemeye Dön →
+          </Link>
         </div>
       </div>
     </div>

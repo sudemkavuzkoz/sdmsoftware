@@ -10,14 +10,11 @@ import {
   Plus, 
   Trash2, 
   ExternalLink, 
-  Check, 
   X, 
   ShieldCheck, 
   DollarSign, 
   Eye, 
   RefreshCw,
-  Globe,
-  Copy,
   CheckCircle2,
   Lock,
   EyeOff,
@@ -79,7 +76,7 @@ export default function AdminPage() {
   const [trendyolSettings, setTrendyolSettings] = useState(db.getTrendyolSettings());
 
   // Aktif Sekme
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'demos' | 'orders' | 'members' | 'trendyol' | 'natro'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'demos' | 'orders' | 'members' | 'trendyol'>('overview');
 
   const loadDbMembers = () => {
     fetch('/api/admin/users', { cache: 'no-store' })
@@ -139,15 +136,6 @@ export default function AdminPage() {
   const [newDemoCategory, setNewDemoCategory] = useState<DemoCategory>('travel_ai');
   const [newDemoUrl, setNewDemoUrl] = useState('https://sdmsoftware.com.tr/demos');
   const [newDemoDesc, setNewDemoDesc] = useState('');
-
-  // Kopyalama Durumu
-  const [copiedValue, setCopiedValue] = useState<string | null>(null);
-
-  const handleCopyText = (val: string) => {
-    navigator.clipboard?.writeText(val);
-    setCopiedValue(val);
-    setTimeout(() => setCopiedValue(null), 2000);
-  };
 
   const refreshData = () => {
     setProducts([...db.getProducts()]);
@@ -367,7 +355,7 @@ export default function AdminPage() {
                 <span className="badge badge-purple">Yönetici: Sudem</span>
               </div>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                sdmsoftware.com.tr E-Ticaret, Trendyol Vitrini & Natro Alan Adı Yönetimi
+                sdmsoftware.com.tr E-Ticaret, Üyelikler, Lisanslar &amp; Trendyol Yönetimi
               </p>
             </div>
           </div>
@@ -507,13 +495,6 @@ export default function AdminPage() {
         >
           <Users size={15} /> Kayıtlı Üyeler &amp; Lisanslar
         </button>
-        <button
-          onClick={() => setActiveTab('natro')}
-          className={`btn btn-sm ${activeTab === 'natro' ? 'btn-primary' : 'btn-secondary'}`}
-          style={activeTab !== 'natro' ? { color: 'var(--primary)', borderColor: 'rgba(0, 240, 255, 0.4)' } : undefined}
-        >
-          <Globe size={15} /> 🌐 Natro Domain Yayınlama Rehberi
-        </button>
       </div>
 
       {/* SEKME 1: GENEL BAKIŞ */}
@@ -546,8 +527,8 @@ export default function AdminPage() {
               <button onClick={() => { setActiveTab('products'); setIsAddProductOpen(true); }} className="btn btn-primary" style={{ justifyContent: 'flex-start' }}>
                 <Plus size={16} /> Yeni E-Ticaret Ürünü Ekle
               </button>
-              <button onClick={() => { setActiveTab('natro'); }} className="btn btn-secondary" style={{ justifyContent: 'flex-start', color: 'var(--primary)' }}>
-                <Globe size={16} /> Natro Domain & Canlı Yayın Adımlarını Gör
+              <button onClick={() => { setActiveTab('members'); loadDbMembers(); }} className="btn btn-secondary" style={{ justifyContent: 'flex-start', color: 'var(--primary)' }}>
+                <Users size={16} /> Kayıtlı Üyeler &amp; Lisansları Görüntüle
               </button>
             </div>
           </div>
@@ -699,84 +680,6 @@ export default function AdminPage() {
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
-      )}
-
-      {/* SEKME: NATRO DOMAIN & CANLIYA ALMA REHBERİ */}
-      {activeTab === 'natro' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          <div className="glass-card" style={{ padding: '2.5rem', border: '1px solid rgba(0, 240, 255, 0.3)' }}>
-            <div className="glow-accent" />
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-              <Globe size={26} color="var(--primary)" />
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>
-                Natro Domainini (<code style={{ color: 'var(--primary)' }}>sdmsoftware.com.tr</code>) Canlıya Alma Rehberi
-              </h2>
-            </div>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', lineHeight: '1.6' }}>
-              Natro&apos;dan aldığınız <strong>sdmsoftware.com.tr</strong> alan adını bu Next.js platformuna bağlayıp tüm dünyada yayına almak için en hızlı, güvenli ve ücretsiz yöntemler aşağıda listelenmiştir.
-            </p>
-          </div>
-
-          {/* Yöntem 1: Vercel (En Çok Tercih Edilen & Sıfır Maliyet) */}
-          <div className="glass-card" style={{ padding: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
-              <div>
-                <span className="badge badge-emerald" style={{ marginBottom: '0.4rem' }}>ÖNERİLEN & EN HIZLI YÖNTEM</span>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Yöntem 1: Ücretsiz Vercel + Natro DNS Yönlendirmesi</h3>
-              </div>
-              <span className="badge badge-cyan">Otomatik 256-Bit SSL • Sıfır Sunucu Maliyeti</span>
-            </div>
-
-            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '1.5rem' }}>
-              Next.js&apos;in resmi yayın platformu Vercel&apos;dir. Projenizi GitHub&apos;a atıp Vercel&apos;e 1 tıkla bağladıktan sonra Natro panelinizde sadece 2 adet DNS kaydı eklemeniz yeterlidir:
-            </p>
-
-            <div style={{ background: 'var(--bg-elevated)', padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <strong style={{ color: 'var(--text-main)', fontSize: '0.9rem' }}>1. A Kaydı (Root Domain):</strong>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>İsim / Host: <code>@</code> • Hedef IP: <code>76.76.21.21</code></div>
-                </div>
-                <button onClick={() => handleCopyText('76.76.21.21')} className="btn btn-secondary btn-sm">
-                  {copiedValue === '76.76.21.21' ? <Check size={14} color="var(--accent-emerald)" /> : <Copy size={14} />}
-                  <span>{copiedValue === '76.76.21.21' ? 'Kopyalandı' : 'IP Kopyala'}</span>
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.75rem', borderTop: '1px solid var(--border-subtle)' }}>
-                <div>
-                  <strong style={{ color: 'var(--text-main)', fontSize: '0.9rem' }}>2. CNAME Kaydı (WWW):</strong>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>İsim / Host: <code>www</code> • Hedef: <code>cname.vercel-dns.com</code></div>
-                </div>
-                <button onClick={() => handleCopyText('cname.vercel-dns.com')} className="btn btn-secondary btn-sm">
-                  {copiedValue === 'cname.vercel-dns.com' ? <Check size={14} color="var(--accent-emerald)" /> : <Copy size={14} />}
-                  <span>{copiedValue === 'cname.vercel-dns.com' ? 'Kopyalandı' : 'CNAME Kopyala'}</span>
-                </button>
-              </div>
-            </div>
-
-            <div style={{ fontSize: '0.82rem', color: 'var(--text-dim)', lineHeight: '1.5' }}>
-              <strong>Natro Panelinde Yapılışı:</strong> Natro Müşteri Paneli → Alan Adı Yönetimi → sdmsoftware.com.tr → <strong>DNS Yönetimi</strong> bölümüne girip yukarıdaki iki kaydı kaydedin. 15-30 dakika içinde siteniz tüm dünyada yayına girer.
-            </div>
-          </div>
-
-          {/* Yöntem 2: Kendi Natro VDS/Sunucunuzda Çalıştırma */}
-          <div className="glass-card" style={{ padding: '2rem' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.75rem' }}>
-              Yöntem 2: Natro Linux VDS / Cloud Sunucunuzda Docker ile Çalıştırma
-            </h3>
-            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '1rem' }}>
-              Projenizde hazır hazırladığımız <code style={{ color: 'var(--primary)' }}>Dockerfile</code> ve <code style={{ color: 'var(--primary)' }}>docker-compose.yml</code> dosyaları sayesinde Natro Linux sunucunuzda tek komutla çalıştırabilirsiniz:
-            </p>
-
-            <div style={{ background: '#05070a', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: 'var(--primary)', marginBottom: '1rem' }}>
-              docker compose up -d
-            </div>
-            <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-              Sunucunuzun 3000 portunda servis çalışır; Nginx reverse proxy ile 80/443 portuna yönlendirerek yayına alabilirsiniz.
-            </div>
           </div>
         </div>
       )}
@@ -960,49 +863,59 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {registeredUsers.map((u) => (
-                  <tr key={u.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                    <td style={{ padding: '0.9rem 1rem' }}>
-                      <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{u.name}</div>
-                      <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>{u.email}</div>
-                      {u.company && <div style={{ fontSize: '0.72rem', color: 'var(--primary)' }}>{u.company}</div>}
-                    </td>
-                    <td style={{ padding: '0.9rem 1rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                        <span
-                          style={{
-                            width: '12px',
-                            height: '12px',
-                            borderRadius: '4px',
-                            background: u.branding?.accentColor || '#00f0ff',
-                            display: 'inline-block'
-                          }}
-                        />
-                        <strong>{u.branding?.brandName || u.name}</strong>
-                      </div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>{u.branding?.customDomain || 'Varsayılan Alan'}</div>
-                    </td>
-                    <td style={{ padding: '0.9rem 1rem', fontFamily: 'var(--font-mono)' }}>
-                      {u.demoActionsUsed} / {u.demoTrialLimit}
-                    </td>
-                    <td style={{ padding: '0.9rem 1rem' }}>
-                      <span className="badge badge-cyan">{u.licenses?.length ?? 0} Lisans</span>
-                    </td>
-                    <td style={{ padding: '0.9rem 1rem' }}>
-                      <select
-                        value={u.membershipTier}
-                        onChange={(e) => void handleUpdateUserTier(u.id, e.target.value as MembershipTier)}
-                        className="form-select"
-                        style={{ padding: '0.32rem 0.6rem', fontSize: '0.76rem', width: 'auto' }}
-                      >
-                        <option value="free">{getTierLabel('free')}</option>
-                        <option value="pro_monthly">{getTierLabel('pro_monthly')}</option>
-                        <option value="pro_yearly">{getTierLabel('pro_yearly')}</option>
-                        <option value="enterprise_license">{getTierLabel('enterprise_license')}</option>
-                      </select>
+                {registeredUsers.filter((u) => u.role !== 'admin').length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      Henüz site üzerinden kayıtlı gerçek müşteri yok. Yeni kayıtlar doğrudan burada listelenir.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  registeredUsers
+                    .filter((u) => u.role !== 'admin')
+                    .map((u) => (
+                      <tr key={u.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                        <td style={{ padding: '0.9rem 1rem' }}>
+                          <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{u.name}</div>
+                          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>{u.email}</div>
+                          {u.company && <div style={{ fontSize: '0.72rem', color: 'var(--primary)' }}>{u.company}</div>}
+                        </td>
+                        <td style={{ padding: '0.9rem 1rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                            <span
+                              style={{
+                                width: '12px',
+                                height: '12px',
+                                borderRadius: '4px',
+                                background: u.branding?.accentColor || '#00f0ff',
+                                display: 'inline-block'
+                              }}
+                            />
+                            <strong>{u.branding?.brandName || u.name}</strong>
+                          </div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>{u.branding?.customDomain || 'Varsayılan Alan'}</div>
+                        </td>
+                        <td style={{ padding: '0.9rem 1rem', fontFamily: 'var(--font-mono)' }}>
+                          {u.demoActionsUsed} / {u.demoTrialLimit}
+                        </td>
+                        <td style={{ padding: '0.9rem 1rem' }}>
+                          <span className="badge badge-cyan">{u.licenses?.length ?? 0} Lisans</span>
+                        </td>
+                        <td style={{ padding: '0.9rem 1rem' }}>
+                          <select
+                            value={u.membershipTier}
+                            onChange={(e) => void handleUpdateUserTier(u.id, e.target.value as MembershipTier)}
+                            className="form-select"
+                            style={{ padding: '0.32rem 0.6rem', fontSize: '0.76rem', width: 'auto' }}
+                          >
+                            <option value="free">{getTierLabel('free')}</option>
+                            <option value="pro_monthly">{getTierLabel('pro_monthly')}</option>
+                            <option value="pro_yearly">{getTierLabel('pro_yearly')}</option>
+                            <option value="enterprise_license">{getTierLabel('enterprise_license')}</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))
+                )}
               </tbody>
             </table>
           </div>

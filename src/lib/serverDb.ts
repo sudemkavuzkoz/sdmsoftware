@@ -107,55 +107,6 @@ function createInitialSeed(): PersistedDatabase {
         },
         passwordHash: hashPassword('sudem2026'),
         createdAt: '2026-01-01T00:00:00.000Z'
-      },
-      {
-        id: 'usr-2',
-        name: 'Örnek Müşteri',
-        email: 'musteri@sdmsoftware.com.tr',
-        role: 'customer',
-        company: 'Atlas Dijital Çözümler',
-        membershipTier: 'free',
-        demoActionsUsed: 0,
-        demoTrialLimit: 5,
-        licenses: [],
-        branding: buildDefaultBranding('Örnek Müşteri', 'Atlas Dijital Çözümler'),
-        passwordHash: hashPassword('demo1234'),
-        createdAt: '2026-05-12T10:00:00.000Z'
-      },
-      {
-        id: 'usr-3',
-        name: 'Dr. Selin Demir',
-        email: 'klinik@marmaradis.com',
-        role: 'customer',
-        company: 'Marmara Diş & Poliklinik',
-        membershipTier: 'pro_yearly',
-        membershipExpiresAt: '2027-11-18T00:00:00.000Z',
-        demoActionsUsed: 12,
-        demoTrialLimit: 9999,
-        licenses: [
-          {
-            id: 'lic-marmara-1',
-            licenseKey: 'SDM-PROY-MARM-2026-8841',
-            targetSlug: 'all',
-            productTitle: 'Premium Pro Üyelik (Yıllık)',
-            tier: 'premium',
-            status: 'active',
-            grantedAt: '2026-10-01T09:00:00.000Z',
-            expiresAt: '2027-11-18T00:00:00.000Z'
-          }
-        ],
-        branding: {
-          brandName: 'Marmara Diş & Poliklinik',
-          tagline: 'Özel Ağız & Diş Sağlığı Merkezi',
-          accentColor: '#10b981',
-          logoText: 'MD',
-          welcomeMessage: 'Marmara Diş hekim ve hasta kabul portalına hoş geldiniz.',
-          customDomain: 'portal.marmaradis.com.tr',
-          enabledModules: ['dental_emr', 'clinic_billing', 'vet_triage', 'stock_upload', 'travel_rag'],
-          updatedAt: '2026-10-01T09:00:00.000Z'
-        },
-        passwordHash: hashPassword('marmara2026'),
-        createdAt: '2026-10-01T09:00:00.000Z'
       }
     ],
     orders: []

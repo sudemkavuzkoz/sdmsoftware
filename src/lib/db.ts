@@ -324,27 +324,6 @@ class DatabaseStore {
         updatedAt: '2026-01-01T00:00:00Z'
       },
       createdAt: '2026-01-01T00:00:00Z'
-    },
-    {
-      id: 'usr-2',
-      name: 'Örnek Müşteri',
-      email: 'musteri@sdmsoftware.com.tr',
-      role: 'customer',
-      company: 'Atlas Dijital Çözümler',
-      membershipTier: 'free',
-      demoActionsUsed: 0,
-      demoTrialLimit: 5,
-      licenses: [],
-      branding: {
-        brandName: 'Atlas Dijital Çözümler',
-        tagline: 'Akıllı İş Süreçleri Portalı',
-        accentColor: '#00f0ff',
-        logoText: 'ADC',
-        welcomeMessage: 'Atlas Dijital demo çalışma alanı aktif.',
-        enabledModules: ['dental_emr', 'vet_triage', 'stock_upload', 'travel_rag'],
-        updatedAt: '2026-05-12T10:00:00Z'
-      },
-      createdAt: '2026-05-12T10:00:00Z'
     }
   ];
 
