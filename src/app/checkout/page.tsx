@@ -25,7 +25,7 @@ type PendingOrderData = Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'licens
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, subtotal, discountAmount, total, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, refreshSession } = useAuth();
 
   const initialName = user && user.id !== 'usr-demo-default' ? user.name : '';
   const initialEmail = user && user.id !== 'usr-demo-default' ? user.email : '';
@@ -77,20 +77,29 @@ export default function CheckoutPage() {
     setCardCvv('321');
   };
 
-  const finalizeOrder = (orderPayload: PendingOrderData) => {
-    const createdOrder = db.createOrder(orderPayload);
-    persistClientOrder(createdOrder);
-
-    fetch('/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderPayload)
-    }).catch(() => {});
+  const finalizeOrder = async (orderPayload: PendingOrderData) => {
+    const fallbackOrder = db.createOrder(orderPayload);
+    let finalOrder = fallbackOrder;
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload)
+      });
+      const data = (await res.json()) as { success?: boolean; order?: Order };
+      if (data.success && data.order) {
+        finalOrder = data.order;
+      }
+      await refreshSession();
+    } catch {
+      // Ağ hatasında yerel sipariş ile devam edilir
+    }
+    persistClientOrder(finalOrder);
 
     clearCart();
     setIsProcessing(false);
     setIs3DSecureOpen(false);
-    router.push(`/order-success/${createdOrder.id}`);
+    router.push(`/order-success/${finalOrder.id}`);
   };
 
   const handleSubmitCheckout = (e: React.FormEvent) => {

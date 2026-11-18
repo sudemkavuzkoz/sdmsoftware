@@ -77,12 +77,43 @@ export interface Order {
   createdAt: string;
 }
 
+export type MembershipTier = 'free' | 'pro_monthly' | 'pro_yearly' | 'enterprise_license';
+
+export interface UserBrandingConfig {
+  brandName: string;
+  tagline: string;
+  accentColor: string;
+  logoText: string;
+  welcomeMessage: string;
+  customDomain?: string;
+  enabledModules: string[];
+  updatedAt: string;
+}
+
+export interface UserLicenseGrant {
+  id: string;
+  licenseKey: string;
+  targetSlug: string;
+  productTitle: string;
+  tier: 'standard' | 'commercial' | 'extended' | 'premium';
+  status: 'active' | 'revoked';
+  grantedAt: string;
+  expiresAt?: string;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   role: 'customer' | 'admin';
   company?: string;
+  membershipTier: MembershipTier;
+  membershipExpiresAt?: string;
+  demoActionsUsed: number;
+  demoTrialLimit: number;
+  licenses: UserLicenseGrant[];
+  branding: UserBrandingConfig;
   createdAt: string;
 }
 

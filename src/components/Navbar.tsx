@@ -16,11 +16,12 @@ import {
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import { getTierLabel } from '@/lib/membership';
 
 export default function Navbar() {
   const pathname = usePathname();
   const { itemCount, openCart } = useCart();
-  const { isAdmin, logout } = useAuth();
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -42,8 +43,78 @@ export default function Navbar() {
             <span className="desktop-tagline">• Kurumsal Yazılım Çözümleri & Canlı Sistem Vitrini</span>
           </div>
 
-          {/* Yönetici Durumu & Giriş */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          {/* Üye Oturumu & Yönetici Girişi */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            {isAuthenticated && user ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  style={{
+                    background: user.membershipTier === 'free' ? 'rgba(0, 240, 255, 0.1)' : 'rgba(16, 185, 129, 0.14)',
+                    border: `1px solid ${user.membershipTier === 'free' ? 'rgba(0, 240, 255, 0.35)' : 'rgba(16, 185, 129, 0.4)'}`,
+                    color: user.membershipTier === 'free' ? 'var(--primary)' : 'var(--accent-emerald)',
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem'
+                  }}
+                >
+                  <span>{user.name}</span>
+                  <span style={{ opacity: 0.75 }}>• {getTierLabel(user.membershipTier)}</span>
+                </Link>
+                {!isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => void logout()}
+                    style={{
+                      background: 'none',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      color: 'var(--text-muted)',
+                      padding: '0.2rem 0.45rem',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '0.7rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Çıkış
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/auth/login"
+                  style={{
+                    color: 'var(--text-main)',
+                    fontSize: '0.72rem',
+                    fontWeight: 600,
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid rgba(255, 255, 255, 0.14)',
+                    background: 'rgba(255, 255, 255, 0.04)'
+                  }}
+                >
+                  Giriş Yap
+                </Link>
+                <Link
+                  href="/auth/register"
+                  style={{
+                    color: '#041019',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    padding: '0.2rem 0.65rem',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'var(--primary)'
+                  }}
+                >
+                  Kaydol
+                </Link>
+              </>
+            )}
+
             {isAdmin ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Link
@@ -62,11 +133,12 @@ export default function Navbar() {
                   }}
                 >
                   <ShieldCheck size={12} />
-                  <span>Yönetici: Sudem</span>
+                  <span>Yönetici</span>
                   <ChevronRight size={11} />
                 </Link>
                 <button
-                  onClick={() => logout()}
+                  type="button"
+                  onClick={() => void logout()}
                   title="Oturumu Kapat"
                   style={{
                     background: 'none',
@@ -100,7 +172,7 @@ export default function Navbar() {
                 onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-dim)'; e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'; }}
               >
                 <Lock size={11} />
-                <span>Yönetici Girişi</span>
+                <span>Yönetici</span>
               </Link>
             )}
           </div>
@@ -315,6 +387,38 @@ export default function Navbar() {
               {link.name}
             </Link>
           ))}
+          {!isAuthenticated ? (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', paddingTop: '0.25rem' }}>
+              <Link
+                href="/auth/login"
+                prefetch={false}
+                onClick={() => setMobileMenuOpen(false)}
+                className="btn btn-secondary btn-sm"
+              >
+                Giriş Yap
+              </Link>
+              <Link
+                href="/auth/register"
+                prefetch={false}
+                onClick={() => setMobileMenuOpen(false)}
+                className="btn btn-primary btn-sm"
+              >
+                Kaydol
+              </Link>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                void logout();
+                setMobileMenuOpen(false);
+              }}
+              className="btn btn-secondary btn-sm"
+              style={{ width: '100%' }}
+            >
+              Çıkış Yap ({user?.name})
+            </button>
+          )}
           <Link
             href="/admin"
             prefetch={false}

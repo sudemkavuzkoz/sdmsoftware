@@ -23,10 +23,12 @@ import {
   EyeOff,
   AlertCircle,
   LogOut,
-  KeyRound
+  KeyRound,
+  Users
 } from 'lucide-react';
 import { db } from '@/lib/db';
-import { Product, DemoProject, Order, ProductCategory, DemoCategory } from '@/lib/types';
+import { Product, DemoProject, Order, ProductCategory, DemoCategory, User, MembershipTier } from '@/lib/types';
+import { getTierLabel } from '@/lib/membership';
 import { useAuth } from '@/context/AuthContext';
 
 export default function AdminPage() {
@@ -72,11 +74,49 @@ export default function AdminPage() {
   const [products, setProducts] = useState<Product[]>(db.getProducts());
   const [demos, setDemos] = useState<DemoProject[]>(db.getDemos());
   const [orders, setOrders] = useState<Order[]>(db.getOrders());
+  const [registeredUsers, setRegisteredUsers] = useState<User[]>([]);
   const [stats, setStats] = useState(db.getStats());
   const [trendyolSettings, setTrendyolSettings] = useState(db.getTrendyolSettings());
 
   // Aktif Sekme
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'demos' | 'orders' | 'trendyol' | 'natro'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'demos' | 'orders' | 'members' | 'trendyol' | 'natro'>('overview');
+
+  const loadDbMembers = () => {
+    fetch('/api/admin/users', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((data: { success?: boolean; users?: User[]; orders?: Order[] }) => {
+        if (data.success && data.users) {
+          setRegisteredUsers(data.users);
+        }
+        if (data.success && data.orders?.length) {
+          setOrders((prev) => {
+            const seen = new Set<string>();
+            return [...data.orders!, ...prev].filter((o) => {
+              if (seen.has(o.id)) return false;
+              seen.add(o.id);
+              return true;
+            });
+          });
+        }
+      })
+      .catch(() => {});
+  };
+
+  const handleUpdateUserTier = async (userId: string, membershipTier: MembershipTier) => {
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, membershipTier })
+      });
+      const data = (await res.json()) as { success?: boolean; user?: User };
+      if (data.success && data.user) {
+        setRegisteredUsers((prev) => prev.map((u) => (u.id === userId ? data.user! : u)));
+      }
+    } catch {
+      // yoksay
+    }
+  };
 
   // Yeni Ürün Ekleme Modalı
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
@@ -450,10 +490,22 @@ export default function AdminPage() {
           <Layers size={15} /> Canlı Demolar ({demos.length})
         </button>
         <button
-          onClick={() => setActiveTab('orders')}
+          onClick={() => {
+            setActiveTab('orders');
+            loadDbMembers();
+          }}
           className={`btn btn-sm ${activeTab === 'orders' ? 'btn-primary' : 'btn-secondary'}`}
         >
           <ShoppingBag size={15} /> Siparişler ({orders.length})
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab('members');
+            loadDbMembers();
+          }}
+          className={`btn btn-sm ${activeTab === 'members' ? 'btn-primary' : 'btn-secondary'}`}
+        >
+          <Users size={15} /> Kayıtlı Üyeler &amp; Lisanslar
         </button>
         <button
           onClick={() => setActiveTab('natro')}
@@ -871,6 +923,82 @@ export default function AdminPage() {
                         <option value="completed">Tamamlandı</option>
                         <option value="processing">İşleniyor</option>
                         <option value="refunded">İptal / İade</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* SEKME: KAYITLI ÜYELER & LİSANSLAR (VERİTABANI) */}
+      {activeTab === 'members' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div>
+              <h2 style={{ fontSize: '1.3rem', fontWeight: 700 }}>Veritabanına Kayıtlı Üyeler &amp; Özelleştirmeler</h2>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                Kayıt olan tüm kullanıcılar, üyelik paketleri, aktif lisans sayıları ve white-label marka ayarları burada listelenir.
+              </p>
+            </div>
+            <button type="button" onClick={loadDbMembers} className="btn btn-secondary btn-sm">
+              <RefreshCw size={14} /> Veritabanını Yenile
+            </button>
+          </div>
+
+          <div className="glass-card" style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.84rem' }}>
+              <thead>
+                <tr style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontSize: '0.74rem', textTransform: 'uppercase' }}>
+                  <th style={{ padding: '0.9rem 1rem' }}>Üye &amp; İletişim</th>
+                  <th style={{ padding: '0.9rem 1rem' }}>Marka / Kişiselleştirme</th>
+                  <th style={{ padding: '0.9rem 1rem' }}>Deneme Kullanımı</th>
+                  <th style={{ padding: '0.9rem 1rem' }}>Aktif Lisans</th>
+                  <th style={{ padding: '0.9rem 1rem' }}>Üyelik Paketini Yönet</th>
+                </tr>
+              </thead>
+              <tbody>
+                {registeredUsers.map((u) => (
+                  <tr key={u.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                    <td style={{ padding: '0.9rem 1rem' }}>
+                      <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{u.name}</div>
+                      <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>{u.email}</div>
+                      {u.company && <div style={{ fontSize: '0.72rem', color: 'var(--primary)' }}>{u.company}</div>}
+                    </td>
+                    <td style={{ padding: '0.9rem 1rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                        <span
+                          style={{
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '4px',
+                            background: u.branding?.accentColor || '#00f0ff',
+                            display: 'inline-block'
+                          }}
+                        />
+                        <strong>{u.branding?.brandName || u.name}</strong>
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>{u.branding?.customDomain || 'Varsayılan Alan'}</div>
+                    </td>
+                    <td style={{ padding: '0.9rem 1rem', fontFamily: 'var(--font-mono)' }}>
+                      {u.demoActionsUsed} / {u.demoTrialLimit}
+                    </td>
+                    <td style={{ padding: '0.9rem 1rem' }}>
+                      <span className="badge badge-cyan">{u.licenses?.length ?? 0} Lisans</span>
+                    </td>
+                    <td style={{ padding: '0.9rem 1rem' }}>
+                      <select
+                        value={u.membershipTier}
+                        onChange={(e) => void handleUpdateUserTier(u.id, e.target.value as MembershipTier)}
+                        className="form-select"
+                        style={{ padding: '0.32rem 0.6rem', fontSize: '0.76rem', width: 'auto' }}
+                      >
+                        <option value="free">{getTierLabel('free')}</option>
+                        <option value="pro_monthly">{getTierLabel('pro_monthly')}</option>
+                        <option value="pro_yearly">{getTierLabel('pro_yearly')}</option>
+                        <option value="enterprise_license">{getTierLabel('enterprise_license')}</option>
                       </select>
                     </td>
                   </tr>

@@ -1,9 +1,18 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { serverDb } from '@/lib/serverDb';
+import { getAuthenticatedUser } from '@/lib/serverSession';
 
 export async function GET() {
-  const orders = db.getOrders();
-  return NextResponse.json({ success: true, count: orders.length, orders });
+  const persistedOrders = serverDb.getOrders();
+  const memoryOrders = db.getOrders();
+  const seen = new Set<string>();
+  const combined = [...persistedOrders, ...memoryOrders].filter((o) => {
+    if (seen.has(o.id)) return false;
+    seen.add(o.id);
+    return true;
+  });
+  return NextResponse.json({ success: true, count: combined.length, orders: combined });
 }
 
 function getErrorMessage(err: unknown): string {
@@ -19,8 +28,10 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    const newOrder = db.createOrder(body);
-    return NextResponse.json({ success: true, order: newOrder }, { status: 201 });
+    const authUser = await getAuthenticatedUser();
+    const newOrder = serverDb.createOrder(body, authUser?.id);
+    const updatedUser = authUser ? serverDb.getUserById(authUser.id) : null;
+    return NextResponse.json({ success: true, order: newOrder, user: updatedUser }, { status: 201 });
   } catch (err: unknown) {
     return NextResponse.json({ success: false, error: getErrorMessage(err) }, { status: 400 });
   }
