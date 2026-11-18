@@ -12,7 +12,9 @@ import {
   Lock,
   LogIn,
   Mail,
+  MessageCircle,
   Palette,
+  Phone,
   Settings2,
   ShieldCheck,
   Sparkles,
@@ -22,6 +24,7 @@ import {
 import { DemoProject, MembershipTier } from '@/lib/types';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
+import { buildMailtoQuoteUrl, buildWhatsAppQuoteUrl, CUSTOMER_SUPPORT } from '@/lib/contact';
 import {
   BRAND_COLOR_PRESETS,
   canCustomizeBranding,
@@ -599,11 +602,11 @@ export default function DemoRunner({ demo, fullHeight = false }: DemoRunnerProps
               </p>
               <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                 <button type="button" onClick={() => setShowUpgradeModal(true)} className="btn btn-primary btn-sm">
-                  <Crown size={14} /> Premium Seç / Lisans Gir
+                  <Crown size={14} /> Teklif İste / Lisans Gir
                 </button>
                 {demo.productSlug && (
                   <Link href={`/products/${demo.productSlug}`} className="btn btn-secondary btn-sm">
-                    Ürünü Satın Al →
+                    Paketi İncele &amp; Teklif Al →
                   </Link>
                 )}
               </div>
@@ -646,7 +649,7 @@ export default function DemoRunner({ demo, fullHeight = false }: DemoRunnerProps
                   <Crown size={18} color="#00f0ff" /> Premium Üyelik &amp; Kişiselleştirilebilir Lisans Merkezi
                 </h3>
                 <p style={{ fontSize: '0.76rem', color: '#94a3b8' }}>
-                  Üyeliğiniz ve lisanslarınız doğrudan kalıcı veritabanına kaydedilir.
+                  Web sitemizden ödeme alınmaz; Müşteri Hizmetlerimizden ({CUSTOMER_SUPPORT.phoneDisplay} / {CUSTOMER_SUPPORT.email}) teklif alarak lisansınızı aktif edebilirsiniz.
                 </p>
               </div>
               <button
@@ -656,6 +659,51 @@ export default function DemoRunner({ demo, fullHeight = false }: DemoRunnerProps
               >
                 <X size={20} />
               </button>
+            </div>
+
+            {/* Direct Customer Support Banner inside Modal */}
+            <div
+              style={{
+                background: 'rgba(16, 185, 129, 0.08)',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                borderRadius: '10px',
+                padding: '0.75rem 1rem',
+                marginBottom: '1rem',
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '0.65rem'
+              }}
+            >
+              <div style={{ fontSize: '0.78rem', color: '#e2e8f0' }}>
+                <strong>Müşteri Hizmetleri:</strong> {CUSTOMER_SUPPORT.phoneDisplay} (WhatsApp) • {CUSTOMER_SUPPORT.email}
+              </div>
+              <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
+                <a
+                  href={buildWhatsAppQuoteUrl({ subject: `${demo.title} - Premium / Lisans Teklifi` })}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-sm"
+                  style={{ background: '#10b981', color: '#03150e', fontWeight: 800, fontSize: '0.72rem' }}
+                >
+                  <MessageCircle size={13} /> WhatsApp Teklif
+                </a>
+                <a
+                  href={buildMailtoQuoteUrl({ subject: `${demo.title} - Premium / Lisans Teklifi` })}
+                  className="btn btn-secondary btn-sm"
+                  style={{ fontSize: '0.72rem' }}
+                >
+                  <Mail size={13} /> Mail Gönder
+                </a>
+                <a
+                  href={CUSTOMER_SUPPORT.telHref}
+                  className="btn btn-secondary btn-sm"
+                  style={{ fontSize: '0.72rem' }}
+                >
+                  <Phone size={12} /> Ara
+                </a>
+              </div>
             </div>
 
             {modalFeedback && (
@@ -759,7 +807,7 @@ export default function DemoRunner({ demo, fullHeight = false }: DemoRunnerProps
                     className="btn btn-primary btn-sm"
                     style={{ width: '100%', fontSize: '0.74rem' }}
                   >
-                    {plan.id === 'enterprise_license' ? 'Lisans Satın Al (IBAN Ödeme)' : 'Sepete Ekle & IBAN ile Öde →'}
+                    Teklif İste &amp; Talep Oluştur →
                   </button>
                 </div>
               ))}

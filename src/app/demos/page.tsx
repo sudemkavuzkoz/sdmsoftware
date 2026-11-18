@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, MessageCircle, Mail } from 'lucide-react';
 import { db } from '@/lib/db';
 import { DemoProject } from '@/lib/types';
 import DemoCard from '@/components/DemoCard';
 import LiveDemoModal from '@/components/LiveDemoModal';
+import { buildMailtoQuoteUrl, buildWhatsAppQuoteUrl, CUSTOMER_SUPPORT } from '@/lib/contact';
 
 export default function DemosPage() {
   const allDemos = db.getDemos();
@@ -82,13 +83,24 @@ export default function DemosPage() {
             </p>
           </div>
 
-          <a
-            href="mailto:sudemkavuzkoz005@gmail.com?subject=Ozel%20Demo%20Talebi"
-            className="btn btn-secondary"
-            style={{ whiteSpace: 'nowrap' }}
-          >
-            Özel Şirket Demosu Talep Et
-          </a>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.65rem' }}>
+            <a
+              href={buildWhatsAppQuoteUrl({ subject: 'Özel Şirket Demosu & Teklif Talebi' })}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-sm"
+              style={{ background: '#10b981', color: '#03150e', fontWeight: 800, whiteSpace: 'nowrap' }}
+            >
+              <MessageCircle size={15} /> WhatsApp ({CUSTOMER_SUPPORT.phoneDisplay})
+            </a>
+            <a
+              href={buildMailtoQuoteUrl({ subject: 'Özel Şirket Demosu Talebi' })}
+              className="btn btn-secondary btn-sm"
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              <Mail size={15} /> E-Posta ile Talep Et
+            </a>
+          </div>
         </div>
       </div>
     </div>

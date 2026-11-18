@@ -27,12 +27,12 @@ interface PersistedDatabase {
 
 function defaultPaymentSettings(): PaymentSettings {
   return {
-    wireTransferEnabled: true,
+    wireTransferEnabled: false,
     bankName: '',
     accountHolder: '',
     iban: '',
     branchOrSwift: '',
-    transferNote: 'Havale / EFT açıklamasına sipariş numaranızı (SDM-...) yazınız. Kontrol sonrası lisansınız ve üyeliğiniz hemen aktif edilir.',
+    transferNote: 'Web sitemiz üzerinden ödeme alınmamaktadır. Teklif için WhatsApp: 0546 401 14 51 | Mail: sudemkavuzkoz005@gmail.com',
     virtualPosEnabled: false,
     virtualPosProvider: 'none',
     taxRatePct: 20,
@@ -463,7 +463,10 @@ class PersistentDatabase {
       return { error: 'Bu lisans anahtarı sipariş veritabanında bulunamadı.' };
     }
     if (matchedOrder.paymentStatus !== 'paid' || matchedOrder.orderStatus !== 'completed') {
-      return { error: 'Bu siparişin Havale/EFT ödemesi henüz onaylanmamıştır. Ödeme onaylandığında lisans aktif edilecektir.' };
+      return {
+        error:
+          'Bu teklif/sipariş talebi yönetici tarafından henüz onaylanmamıştır. Onaylandığında lisansınız aktif edilecektir (Müşteri Hizmetleri: 0546 401 14 51).'
+      };
     }
 
     const grant: UserLicenseGrant = {

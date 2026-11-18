@@ -29,20 +29,20 @@ const LEGAL_DOCS: Record<string, LegalDoc> = {
       },
       {
         heading: '3. İlgili Kişinin Hakları',
-        body: 'KVKK Madde 11 kapsamındaki bilgi talep etme, düzeltme, silme ve itiraz haklarınız için sudemkavuzkoz005@gmail.com adresi üzerinden bizimle her zaman iletişime geçebilirsiniz.'
+        body: 'KVKK Madde 11 kapsamındaki bilgi talep etme, düzeltme, silme ve itiraz haklarınız için sudemkavuzkoz005@gmail.com e-posta adresi veya 0546 401 14 51 numaralı müşteri hizmetleri hattı üzerinden bizimle her zaman iletişime geçebilirsiniz.'
       }
     ]
   },
   'mesafeli-satis': {
-    title: 'Mesafeli Satış Sözleşmesi',
+    title: 'Mesafeli Satış ve Lisans Bilgilendirmesi',
     badge: 'DİJİTAL YAZILIM LİSANSI',
     updatedAt: 'Son Güncelleme: 2026',
     summary:
-      'sdmsoftware.com.tr üzerinden elektronik ortamda sipariş edilen yazılım lisansları, kurulum paketleri ve kurumsal danışmanlık hizmetlerine ilişkin satış koşulları.',
+      'sdmsoftware.com.tr üzerindeki yazılım paketleri ve kurumsal çözümler için Müşteri Hizmetleri teklif süreci ve dijital lisans koşulları.',
     sections: [
       {
-        heading: '1. Sözleşmenin Konusu ve Dijital Teslimat',
-        body: 'Alıcı tarafından seçilen yazılım ürününün lisans paketi (Standart, Ticari veya Genişletilmiş/VIP), ödeme onayının ardından dijital ortamda lisans anahtarı ve kurulum rehberi olarak anında teslim edilir.'
+        heading: '1. Teklif Süreci ve Dijital Teslimat',
+        body: 'Web sitemiz üzerinden doğrudan ödeme alınmaz. Seçilen yazılım veya üyelik paketi için Müşteri Hizmetleri (0546 401 14 51 / sudemkavuzkoz005@gmail.com) ile sağlanan teklif mutabakatı sonrasında dijital lisans anahtarı ve kurulum rehberi hesabınıza tanımlanır.'
       },
       {
         heading: '2. Lisans Kapsamı ve Kullanım Hakları',
@@ -71,7 +71,7 @@ const LEGAL_DOCS: Record<string, LegalDoc> = {
       },
       {
         heading: '3. İletişim ve Güvenlik',
-        body: 'Tüm sayfa ve veri trafiği HTTPS / TLS şifreleme katmanı üzerinden iletilir. Sorularınız için sudemkavuzkoz005@gmail.com adresine ulaşabilirsiniz.'
+        body: 'Tüm sayfa ve veri trafiği HTTPS / TLS şifreleme katmanı üzerinden iletilir. Sorularınız için sudemkavuzkoz005@gmail.com veya 0546 401 14 51 numaralı hattan ulaşabilirsiniz.'
       }
     ]
   },
@@ -80,19 +80,19 @@ const LEGAL_DOCS: Record<string, LegalDoc> = {
     badge: 'İADE VE DESTEK POLİTİKASI',
     updatedAt: 'Son Güncelleme: 2026',
     summary:
-      'Dijital ürün, anında teslim edilen yazılım lisansı ve kaynak kod paketleri için iptal, değişim ve teknik çözüm süreçleri.',
+      'Dijital ürün, kurumsal yazılım lisansı ve kaynak kod paketleri için teklif, iptal ve teknik destek süreçleri.',
     sections: [
       {
-        heading: '1. Dijital Ürün ve Anında Teslimat İstisnası',
-        body: 'Mesafeli Sözleşmeler Yönetmeliği uyarınca, elektronik ortamda anında ifa edilen ve lisans anahtarı / kaynak kodu teslim edilen yazılımlarda key teslimi sonrasında kural olarak cayma hakkı uygulanmaz.'
+        heading: '1. Dijital Ürün ve Lisans Teslimatı',
+        body: 'Mesafeli Sözleşmeler Yönetmeliği uyarınca, elektronik ortamda ifa edilen ve lisans anahtarı / kaynak kodu hesabınıza tanımlanan yazılımlarda teslimat sonrasında kural olarak cayma hakkı uygulanmaz.'
       },
       {
         heading: '2. Teknik Sorunlarda Destek ve Çözüm Garantisi',
-        body: 'Ürünün vaat edilen kurulum rehberine veya canlı demo özelliklerine aykırı çalışması durumunda mühendislik ekibimiz öncelikle teknik uyarlama sağlar; çözülemeyen teknik aksaklıklarda iade talepleri 14 gün içinde değerlendirilir.'
+        body: 'Ürünün vaat edilen kurulum rehberine veya canlı demo özelliklerine aykırı çalışması durumunda mühendislik ekibimiz (0546 401 14 51) öncelikle teknik uyarlama sağlar.'
       },
       {
-        heading: '3. Havale / EFT Sipariş İptali',
-        body: 'Henüz ödemesi tamamlanmamış ve lisansı aktifleştirilmemiş Havale / EFT siparişleri talebiniz doğrultusunda tek taraflı olarak iptal edilebilir.'
+        heading: '3. Teklif Talebi ve Ön Başvuru İptali',
+        body: 'Henüz lisansı aktifleştirilmemiş ve onaylanmamış teklif talepleri talebiniz doğrultusunda (0546 401 14 51 / sudemkavuzkoz005@gmail.com) tek taraflı olarak iptal edilebilir.'
       }
     ]
   }

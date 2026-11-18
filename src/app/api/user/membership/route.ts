@@ -47,7 +47,8 @@ export async function POST(request: Request) {
         return NextResponse.json(
           {
             success: false,
-            error: 'Doğrudan üyelik aktivasyonu yalnızca yönetici onayıyla veya Sepet / Havale-EFT ödemesiyle yapılır.'
+            error:
+              'Üyelik ve lisans aktivasyonu yalnızca Müşteri Hizmetleri teklif onayı sonrası yönetici tarafından yapılmaktadır (WhatsApp: 0546 401 14 51).'
           },
           { status: 403 }
         );

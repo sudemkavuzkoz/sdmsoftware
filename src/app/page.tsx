@@ -7,15 +7,16 @@ import {
   ArrowRight,
   ShieldCheck,
   Zap,
-  Download,
-  Sparkles,
-  MessageSquare
+  Headphones,
+  Sparkles
 } from 'lucide-react';
 import { db } from '@/lib/db';
 import { DemoProject } from '@/lib/types';
 import ProductCard from '@/components/ProductCard';
 import DemoCard from '@/components/DemoCard';
 import LiveDemoModal from '@/components/LiveDemoModal';
+import CustomerSupportSection from '@/components/CustomerSupportSection';
+import { CUSTOMER_SUPPORT } from '@/lib/contact';
 
 export default function HomePage() {
   const products = db.getProducts();
@@ -51,20 +52,24 @@ export default function HomePage() {
             </h1>
 
             {/* Alt Açıklama */}
-            <p style={{ fontSize: 'clamp(1rem, 2vw, 1.2rem)', color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '2.5rem', maxWidth: '750px' }}>
-              <strong>sdmsoftware.com.tr</strong> ile geliştirdiğimiz yapay zeka seyahat planlayıcısı, hisse senedi fiyat tahmin motoru ve klinik otomasyonunu canlı tarayıcınızda deneyimleyin. İster sitemizden ister <strong>Trendyol</strong> mağazamızdan güvenle edinin.
+            <p style={{ fontSize: 'clamp(1rem, 2vw, 1.2rem)', color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '2.5rem', maxWidth: '760px' }}>
+              <strong>sdmsoftware.com.tr</strong> ile geliştirdiğimiz yapay zeka seyahat planlayıcısı, hisse senedi fiyat tahmin motoru ve klinik otomasyonunu canlı tarayıcınızda deneyimleyin. Web sitemizden ödeme alınmaz; Müşteri Hizmetlerimiz (<strong>{CUSTOMER_SUPPORT.phoneDisplay}</strong>) üzerinden doğrudan teklif verebilirsiniz.
             </p>
 
             {/* CTA Butonları */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'center', marginBottom: '3.5rem' }}>
               <Link href="/products" className="btn btn-primary btn-lg">
-                <span>Yazılımları İncele & Satın Al</span>
+                <span>Yazılımları İncele &amp; Teklif Al</span>
                 <ArrowRight size={18} />
               </Link>
               <Link href="/demos" className="btn btn-secondary btn-lg">
                 <Layers size={18} color="var(--primary)" />
                 <span>Canlı Demoları Dene</span>
               </Link>
+              <a href="#musteri-hizmetleri" className="btn btn-secondary btn-lg">
+                <Headphones size={18} color="#34d399" />
+                <span>Müşteri Hizmetleri</span>
+              </a>
             </div>
 
             {/* Hızlı İstatistik Sayaçları */}
@@ -79,12 +84,12 @@ export default function HomePage() {
                   <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Yüksek SLA Erişilebilirlik</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-purple)' }}>Trendyol</div>
-                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Onaylı Mağaza Satışı</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-purple)' }}>WhatsApp</div>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>{CUSTOMER_SUPPORT.phoneDisplay} Teklif</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-amber)' }}>7/24</div>
-                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Kurumsal Mühendislik Desteği</div>
+                  <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-amber)' }}>Birebir</div>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Müşteri Hizmetleri Desteği</div>
                 </div>
               </div>
             </div>
@@ -105,7 +110,7 @@ export default function HomePage() {
                 Geliştirdiğimiz Sistemlerin <span className="text-gradient">Canlı Demoları</span>
               </h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '0.35rem' }}>
-                Harici kurulum gerekmeden, web tarayıcınız üzerinden sistemleri anında test edin.
+                Harici kurulum gerekmeden, e-posta hesabınızla giriş yaparak web tarayıcınız üzerinden sistemleri anında test edin.
               </p>
             </div>
 
@@ -129,13 +134,13 @@ export default function HomePage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem', marginBottom: '2.5rem' }}>
             <div>
               <span className="badge badge-cyan" style={{ marginBottom: '0.5rem' }}>
-                E-TİCARET & DİJİTAL LİSANS SATIŞI
+                YAZILIM PAKETLERİ &amp; TEKLİF KATALOĞU
               </span>
               <h2 style={{ fontSize: '2rem', fontWeight: 800 }}>
                 Hazır ve Özelleştirilebilir <span className="text-gradient">Yazılım Paketleri</span>
               </h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '0.35rem' }}>
-                Tam kaynak kod, kurulum desteği ve ömür boyu standart güncelleme garantisi.
+                Tam kaynak kod, kurulum desteği ve WhatsApp / E-posta üzerinden size özel lisans teklifi.
               </p>
             </div>
 
@@ -157,8 +162,6 @@ export default function HomePage() {
         </div>
       </section>
 
-
-
       {/* 5. MİMARİ VE AVANTAJLAR (Neden SDM Software?) */}
       <section>
         <div className="container">
@@ -176,7 +179,7 @@ export default function HomePage() {
               <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', background: 'rgba(0, 240, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
                 <Zap size={24} color="var(--primary)" />
               </div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.75rem' }}>Yapay Zeka & Derin Öğrenme</h3>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.75rem' }}>Yapay Zeka &amp; Derin Öğrenme</h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.6' }}>
                 Seyahat planlamadan finansal hisse senedi tahminine kadar en yeni LLM ve PyTorch sinir ağı modellerini doğrudan uygulamalarınıza entegre ediyoruz.
               </p>
@@ -186,59 +189,29 @@ export default function HomePage() {
               <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', background: 'rgba(168, 85, 247, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
                 <ShieldCheck size={24} color="var(--accent-purple)" />
               </div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.75rem' }}>KVKK & Sağlık Uyumluluğu</h3>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.75rem' }}>KVKK &amp; Sağlık Uyumluluğu</h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                Klinik ve sağlık sistemlerimizde hasta verileri uçtan uca şifrelenir; GİB e-SMM ve e-Fatura entegrasyonu yasal standartlara %100 uygundur.
+                Klinik ve sağlık sistemlerimizde hasta verileri uçtan uca şifrelenir; GİB e-SMM ve e-Fatura entegrasyonu yasal standartlara uygundur.
               </p>
             </div>
 
             <div className="glass-card" style={{ padding: '2rem' }}>
               <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', background: 'rgba(16, 185, 129, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
-                <Download size={24} color="var(--accent-emerald)" />
+                <Headphones size={24} color="var(--accent-emerald)" />
               </div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.75rem' }}>Çok Kanallı Güvenli Satış</h3>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.75rem' }}>Doğrudan Teklif &amp; Müşteri Hizmetleri</h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.6' }}>
-                İster web sitemiz üzerinden 256-Bit SSL ve 3D Secure ile anında lisans alın, ister Trendyol mağazamızdan taksit avantajıyla sipariş verin.
+                Web sitemiz üzerinden ödeme yapılmaz. {CUSTOMER_SUPPORT.phoneDisplay} (WhatsApp) ve {CUSTOMER_SUPPORT.email} üzerinden birebir fiyat teklifi alabilirsiniz.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-
-
-      {/* 7. İLETİŞİM & ÖZEL PROJE TEKLİFİ ALMA */}
-      <section>
-        <div className="container">
-          <div className="glass-card" style={{ padding: '3.5rem 2.5rem', background: 'linear-gradient(135deg, #0c111c 0%, #151b29 100%)', border: '1px solid rgba(0, 240, 255, 0.2)' }}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '2rem' }}>
-              <div style={{ maxWidth: '580px' }}>
-                <span className="badge badge-cyan" style={{ marginBottom: '0.75rem' }}>ÖZEL PROJE GELİŞTİRME</span>
-                <h3 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.75rem' }}>
-                  Şirketinize Özel Yazılım Çözümü mü Gerekiyor?
-                </h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.6' }}>
-                  AI Travel Planner, Borsa Tahmin veya Klinik sistemlerinin haricinde şirketinize özel mimari tasarım ve API entegrasyonu geliştiriyoruz.
-                </p>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <a
-                  href="mailto:sudemkavuzkoz005@gmail.com?subject=Ozel%20Yazilim%20Teklifi"
-                  className="btn btn-primary btn-lg"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
-                >
-                  <MessageSquare size={18} />
-                  <span>Teklif Al & Bize Yazın</span>
-                </a>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textAlign: 'center' }}>
-                  24 saat içinde teknik fizibilite ve fiyatlandırma ile dönüş yapıyoruz.
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* 7. MÜŞTERİ HİZMETLERİ & ÖZEL PROJE TEKLİFİ ALMA */}
+      <div className="container">
+        <CustomerSupportSection id="musteri-hizmetleri" />
+      </div>
 
       {/* Canlı Demo Modalı */}
       <LiveDemoModal

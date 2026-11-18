@@ -2,7 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Terminal, Shield, Cpu, Globe, Mail, MapPin, ExternalLink, Layers } from 'lucide-react';
+import { Terminal, Shield, Cpu, Globe, Mail, MapPin, ExternalLink, Layers, Phone, MessageCircle } from 'lucide-react';
+import { buildMailtoQuoteUrl, buildWhatsAppQuoteUrl, CUSTOMER_SUPPORT } from '@/lib/contact';
 
 export default function Footer() {
   return (
@@ -48,12 +49,32 @@ export default function Footer() {
                 </a>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Mail size={14} color="var(--primary)" />
+                <MessageCircle size={14} color="#34d399" />
                 <a
-                  href="mailto:sudemkavuzkoz005@gmail.com"
+                  href={buildWhatsAppQuoteUrl({ subject: 'Müşteri Hizmetleri / Fiyat Teklifi' })}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: '#34d399', fontWeight: 700, textDecoration: 'underline', textUnderlineOffset: '3px' }}
+                >
+                  WhatsApp: {CUSTOMER_SUPPORT.phoneDisplay}
+                </a>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Phone size={14} color="var(--primary)" />
+                <a
+                  href={CUSTOMER_SUPPORT.telHref}
                   style={{ color: 'var(--text-main)', textDecoration: 'underline', textUnderlineOffset: '3px' }}
                 >
-                  sudemkavuzkoz005@gmail.com
+                  Tel: {CUSTOMER_SUPPORT.phoneDisplay}
+                </a>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Mail size={14} color="var(--primary)" />
+                <a
+                  href={buildMailtoQuoteUrl({ subject: 'Müşteri Hizmetleri / Fiyat Teklifi' })}
+                  style={{ color: 'var(--text-main)', textDecoration: 'underline', textUnderlineOffset: '3px' }}
+                >
+                  {CUSTOMER_SUPPORT.email}
                 </a>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -144,12 +165,12 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Kolon 4: Teknoloji & Standartlar */}
+          {/* Kolon 4: Müşteri Hizmetleri & Teklif */}
           <div>
             <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '1.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Teknoloji & Standartlar
+              Müşteri Hizmetleri &amp; Teklif
             </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
                 <Cpu size={16} color="var(--primary)" />
                 <span>Next.js 16 & Modern TypeScript</span>
@@ -160,12 +181,12 @@ export default function Footer() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
                 <Shield size={16} color="var(--accent-emerald)" />
-                <span>Vercel Bulut Dağıtımı & CI/CD</span>
+                <span>Web Sitemizden Ödeme Alınmaz</span>
               </div>
             </div>
 
-            <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.85rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', fontSize: '0.75rem', color: 'var(--text-dim)', lineHeight: '1.5' }}>
-              Tüm açık kaynak projelere, veri modellerine ve canlı demolarımıza <strong style={{ color: 'var(--text-main)' }}>github.com/sudemkavuzkoz</strong> üzerinden doğrudan erişebilirsiniz.
+            <div style={{ background: 'rgba(16, 185, 129, 0.06)', padding: '0.9rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(16, 185, 129, 0.25)', fontSize: '0.76rem', color: 'var(--text-muted)', lineHeight: '1.55' }}>
+              Teklif &amp; Müşteri Hizmetleri için WhatsApp (<strong style={{ color: '#34d399' }}>{CUSTOMER_SUPPORT.phoneDisplay}</strong>) veya e-posta (<strong style={{ color: 'var(--text-main)' }}>{CUSTOMER_SUPPORT.email}</strong>) ile doğrudan ulaşabilirsiniz.
             </div>
           </div>
         </div>

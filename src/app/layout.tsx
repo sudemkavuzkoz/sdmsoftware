@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     default: 'SDM Software | Kurumsal Yazılım, E-Ticaret & Canlı Demo Platformu',
     template: '%s | SDM Software'
   },
-  description: 'sdmsoftware.com.tr - AI Travel Planner, StockPred AI finansal tahmin, SDM Klinik, ADSP Protez Takip ve Veteriner Klinik sistemleri. Canlı sistem demolarını deneyimleyin ve dijital yazılım lisanslarını güvenle satın alın.',
+  description: 'sdmsoftware.com.tr - AI Travel Planner, StockPred AI finansal tahmin, SDM Klinik, ADSP Protez Takip ve Veteriner Klinik sistemleri. Canlı sistem demolarını deneyimleyin ve Müşteri Hizmetlerimiz üzerinden teklif alın.',
   keywords: [
     'sdmsoftware.com.tr',
     'SDM Software',
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     'ADSP Protez Takip',
     'klinik yönetim sistemi',
     'canlı demo sistemleri',
-    'yazılım lisansı satın al'
+    'yazılım lisansı teklif al'
   ],
   authors: [{ name: 'SDM Software Engineering' }],
   creator: 'SDM Software',

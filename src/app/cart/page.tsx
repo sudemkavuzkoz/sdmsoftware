@@ -3,8 +3,9 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingBag, ArrowRight, Trash2, Plus, Minus, Tag, ShieldCheck } from 'lucide-react';
+import { ShoppingBag, ArrowRight, Trash2, Plus, Minus, Tag, Headphones, MessageCircle, Mail } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { buildMailtoQuoteUrl, buildWhatsAppQuoteUrl, CUSTOMER_SUPPORT } from '@/lib/contact';
 
 export default function CartPage() {
   const {
@@ -42,17 +43,22 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className="container" style={{ padding: '6rem 1.5rem', textAlign: 'center' }}>
-        <div style={{ maxWidth: '500px', margin: '0 auto' }}>
+        <div style={{ maxWidth: '520px', margin: '0 auto' }}>
           <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
             <ShoppingBag size={32} color="var(--primary)" />
           </div>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '0.75rem' }}>Alışveriş Sepetiniz Boş</h1>
+          <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '0.75rem' }}>Teklif Listeniz Boş</h1>
           <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontSize: '0.95rem' }}>
-            Kataloğumuzda yer alan kurumsal yazılımları, modülleri ve API kütüphanelerini inceleyerek sepetinize ekleyebilirsiniz.
+            Web sitemizden ödeme alınmamaktadır. Yazılımları teklif listenize ekleyebilir veya doğrudan Müşteri Hizmetlerimizle ({CUSTOMER_SUPPORT.phoneDisplay} / {CUSTOMER_SUPPORT.email}) teklif görüşmesi yapabilirsiniz.
           </p>
-          <Link href="/products" className="btn btn-primary">
-            Yazılım Kataloğunu İncele
-          </Link>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center' }}>
+            <Link href="/products" className="btn btn-primary">
+              Yazılım Kataloğunu İncele
+            </Link>
+            <Link href="/checkout" className="btn btn-secondary">
+              Doğrudan Teklif Oluştur
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -61,7 +67,7 @@ export default function CartPage() {
   return (
     <div className="container" style={{ paddingTop: '3rem', paddingBottom: '5rem' }}>
       <h1 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '2rem' }}>
-        Alışveriş <span className="text-gradient">Sepetiniz</span>
+        Yazılım <span className="text-gradient">Teklif Listeniz</span>
       </h1>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem' }} className="cart-grid">
@@ -147,10 +153,10 @@ export default function CartPage() {
           </div>
         </div>
 
-        {/* Sipariş Özeti ve Kupon */}
+        {/* Teklif Özeti ve Kupon */}
         <div>
           <div className="glass-card" style={{ padding: '2rem', position: 'sticky', top: '6rem' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1.5rem' }}>Sipariş Özeti</h2>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '1.5rem' }}>Teklif Özeti</h2>
 
             {/* Kupon Alanı */}
             <form onSubmit={handleApply} style={{ marginBottom: '1.5rem' }}>
@@ -195,23 +201,62 @@ export default function CartPage() {
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-main)', paddingTop: '0.75rem', borderTop: '1px solid var(--border-subtle)' }}>
-                <span>Toplam Tutar</span>
+                <span>Liste Tutarı</span>
                 <span className="text-cyan">{total.toLocaleString('tr-TR')} ₺</span>
               </div>
             </div>
 
-            <Link
-              href="/checkout"
-              className="btn btn-primary"
-              style={{ width: '100%', padding: '0.85rem', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
-            >
-              <span>Güvenli Ödemeye Geç</span>
-              <ArrowRight size={18} />
-            </Link>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              <Link
+                href="/checkout"
+                className="btn btn-primary"
+                style={{ width: '100%', padding: '0.85rem', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
+              >
+                <span>Teklif Talebine Geç</span>
+                <ArrowRight size={18} />
+              </Link>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '1rem' }}>
-              <ShieldCheck size={16} color="var(--accent-emerald)" />
-              <span>256-Bit SSL Iyzico & Stripe Uçtan Uca Şifreleme</span>
+              <a
+                href={buildWhatsAppQuoteUrl({ items, totalAmount: total })}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-sm"
+                style={{
+                  width: '100%',
+                  background: '#10b981',
+                  color: '#03150e',
+                  fontWeight: 800,
+                  padding: '0.7rem',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '0.45rem'
+                }}
+              >
+                <MessageCircle size={16} />
+                <span>WhatsApp&apos;tan Teklif Ver ({CUSTOMER_SUPPORT.phoneDisplay})</span>
+              </a>
+
+              <a
+                href={buildMailtoQuoteUrl({ items, totalAmount: total })}
+                className="btn btn-secondary btn-sm"
+                style={{
+                  width: '100%',
+                  padding: '0.65rem',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '0.45rem'
+                }}
+              >
+                <Mail size={15} />
+                <span>E-Posta ile Teklif Gönder</span>
+              </a>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.74rem', color: 'var(--text-dim)', marginTop: '1rem', textAlign: 'center' }}>
+              <Headphones size={15} color="var(--accent-emerald)" />
+              <span>Web sitemizden ödeme alınmaz • {CUSTOMER_SUPPORT.phoneDisplay}</span>
             </div>
           </div>
         </div>

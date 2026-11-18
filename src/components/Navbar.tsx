@@ -12,11 +12,14 @@ import {
   X, 
   Sparkles,
   ChevronRight,
-  Lock
+  Lock,
+  MessageCircle,
+  Mail
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { getTierLabel } from '@/lib/membership';
+import { buildMailtoQuoteUrl, buildWhatsAppQuoteUrl, CUSTOMER_SUPPORT } from '@/lib/contact';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -29,18 +32,33 @@ export default function Navbar() {
     { name: 'Yazılım Ürünleri', href: '/products' },
     { name: 'Canlı Demolar', href: '/demos', highlight: true },
     { name: 'Müşteri Paneli', href: '/dashboard' },
+    { name: 'Müşteri Hizmetleri', href: '/checkout' },
   ];
 
   return (
     <header style={{ position: 'sticky', top: 0, zIndex: 100, backdropFilter: 'blur(16px)', borderBottom: '1px solid var(--border-subtle)', background: 'rgba(7, 9, 14, 0.85)' }}>
       {/* Üst Bilgi Şeridi */}
       <div style={{ background: 'linear-gradient(90deg, #090d16 0%, #111a2d 50%, #090d16 100%)', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', padding: '0.4rem 0', fontSize: '0.78rem' }}>
-        <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-muted)' }}>
+        <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: 'var(--primary)', whiteSpace: 'nowrap' }}>
               <Sparkles size={13} /> sdmsoftware.com.tr
             </span>
-            <span className="desktop-tagline">• Kurumsal Yazılım Çözümleri & Canlı Sistem Vitrini</span>
+            <a
+              href={buildWhatsAppQuoteUrl({ subject: 'Müşteri Hizmetleri / Teklif Talebi' })}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: '#34d399', fontWeight: 700, fontSize: '0.73rem' }}
+            >
+              <MessageCircle size={12} /> WhatsApp: {CUSTOMER_SUPPORT.phoneDisplay}
+            </a>
+            <a
+              href={buildMailtoQuoteUrl({ subject: 'Müşteri Hizmetleri / Teklif Talebi' })}
+              className="desktop-tagline"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: 'var(--text-muted)', fontSize: '0.72rem' }}
+            >
+              <Mail size={12} color="var(--primary)" /> {CUSTOMER_SUPPORT.email}
+            </a>
           </div>
 
           {/* Üye Oturumu & Yönetici Girişi */}
@@ -257,10 +275,11 @@ export default function Navbar() {
 
         {/* Eylemler: Sepet, Canlı Demo Butonu, Mobil Menü Toggle */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          {/* Sepet Butonu */}
+          {/* Teklif Listesi Butonu */}
           <button
             onClick={openCart}
-            aria-label="Alışveriş Sepeti"
+            aria-label="Teklif Listesi"
+            title="Teklif Listesi"
             style={{
               position: 'relative',
               background: 'rgba(255, 255, 255, 0.04)',

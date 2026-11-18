@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingCart, Star, Check, ExternalLink, Play, Mail } from 'lucide-react';
+import { ShoppingCart, Star, Check, ExternalLink, Play, Mail, MessageCircle } from 'lucide-react';
 import { Product } from '@/lib/types';
 import { useCart } from '@/context/CartContext';
+import { buildMailtoQuoteUrl, buildWhatsAppQuoteUrl, CUSTOMER_SUPPORT } from '@/lib/contact';
 
 interface ProductCardProps {
   product: Product;
@@ -223,11 +224,11 @@ export default function ProductCard({ product, onOpenDemo }: ProductCardProps) {
             )}
           </div>
           <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginBottom: '0.75rem' }}>
-            {isTrendyol ? 'Trendyol Güvencesiyle' : 'Standart Lisans / Tek Seferlik Ödeme'}
+            {isTrendyol ? 'Trendyol Güvencesiyle' : 'Liste Fiyatı • Teklif İçin Müşteri Hizmetleri'}
           </div>
 
           {/* Butonlar */}
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
             {isTrendyol && product.marketplaceUrl ? (
               <a
                 href={product.marketplaceUrl}
@@ -247,36 +248,52 @@ export default function ProductCard({ product, onOpenDemo }: ProductCardProps) {
                 <ExternalLink size={12} />
               </a>
             ) : (
-              /* Teklif Al Butonu - normal ürünler için */
-              <a
-                href={`mailto:sudemkavuzkoz005@gmail.com?subject=Fiyat%20Teklifi%20-%20${encodeURIComponent(product.title)}&body=Merhaba%2C%0A%0A${encodeURIComponent(product.title)}%20i%C3%A7in%20fiyat%20teklifi%20almak%20istiyorum.%0A%0AAd%C4%B1m%3A%0A%C5%9Eirketim%3A%0ATelefon%3A`}
-                className="btn btn-sm"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.18) 0%, rgba(99, 102, 241, 0.18) 100%)',
-                  border: '1px solid rgba(168, 85, 247, 0.45)',
-                  color: '#c084fc',
-                  fontWeight: 700,
-                  fontSize: '0.78rem',
-                  padding: '0.45rem 0.75rem',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  textDecoration: 'none',
-                  borderRadius: 'var(--radius-sm)',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(135deg, rgba(168, 85, 247, 0.32) 0%, rgba(99, 102, 241, 0.32) 100%)';
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.35)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'linear-gradient(135deg, rgba(168, 85, 247, 0.18) 0%, rgba(99, 102, 241, 0.18) 100%)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                <Mail size={13} />
-                <span>Teklif Al</span>
-              </a>
+              <>
+                <a
+                  href={buildWhatsAppQuoteUrl({ subject: product.title })}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-sm"
+                  title={`WhatsApp: ${CUSTOMER_SUPPORT.phoneDisplay}`}
+                  style={{
+                    background: 'rgba(16, 185, 129, 0.16)',
+                    border: '1px solid rgba(16, 185, 129, 0.45)',
+                    color: '#34d399',
+                    fontWeight: 700,
+                    fontSize: '0.76rem',
+                    padding: '0.45rem 0.65rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.3rem',
+                    textDecoration: 'none',
+                    borderRadius: 'var(--radius-sm)'
+                  }}
+                >
+                  <MessageCircle size={13} />
+                  <span>WhatsApp</span>
+                </a>
+                <a
+                  href={buildMailtoQuoteUrl({ subject: product.title })}
+                  className="btn btn-sm"
+                  title={CUSTOMER_SUPPORT.email}
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.18) 0%, rgba(99, 102, 241, 0.18) 100%)',
+                    border: '1px solid rgba(168, 85, 247, 0.45)',
+                    color: '#c084fc',
+                    fontWeight: 700,
+                    fontSize: '0.76rem',
+                    padding: '0.45rem 0.65rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.3rem',
+                    textDecoration: 'none',
+                    borderRadius: 'var(--radius-sm)'
+                  }}
+                >
+                  <Mail size={13} />
+                  <span>Teklif Al</span>
+                </a>
+              </>
             )}
 
             <button
@@ -292,10 +309,10 @@ export default function ProductCard({ product, onOpenDemo }: ProductCardProps) {
                 borderColor: added ? 'var(--accent-emerald)' : isTrendyol ? 'rgba(255, 255, 255, 0.2)' : undefined,
                 color: added ? 'var(--accent-emerald)' : isTrendyol ? 'var(--text-main)' : undefined
               }}
-              title="Sepete Ekle"
+              title="Teklif Listesine Ekle"
             >
               {added ? <Check size={16} /> : <ShoppingCart size={16} />}
-              <span style={{ fontSize: '0.82rem' }}>{added ? 'Eklendi' : 'Sepete Ekle'}</span>
+              <span style={{ fontSize: '0.78rem' }}>{added ? 'Eklendi' : 'Listeye Ekle'}</span>
             </button>
           </div>
         </div>

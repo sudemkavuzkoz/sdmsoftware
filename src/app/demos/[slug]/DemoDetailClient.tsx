@@ -13,6 +13,7 @@ import {
   Star,
   Eye,
   Mail,
+  MessageCircle,
   Terminal,
   Zap,
   ExternalLink,
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 import { DemoProject, Product } from '@/lib/types';
 import DemoRunner from '@/components/demos/DemoRunner';
+import { buildMailtoQuoteUrl, buildWhatsAppQuoteUrl, CUSTOMER_SUPPORT } from '@/lib/contact';
 
 interface DemoDetailClientProps {
   demo: DemoProject;
@@ -150,23 +152,36 @@ export default function DemoDetailClient({ demo, linkedProduct }: DemoDetailClie
                     className="btn btn-secondary"
                     style={{ fontSize: '0.9rem' }}
                   >
-                    <ShoppingCart size={15} /> Lisansı Al — {linkedProduct.price.toLocaleString('tr-TR')} ₺
+                    <ShoppingCart size={15} /> Paketi İncele — {linkedProduct.price.toLocaleString('tr-TR')} ₺
                   </Link>
                 )}
-                {linkedProduct && (
-                  <a
-                    href={`mailto:sudemkavuzkoz005@gmail.com?subject=Teklif%20-%20${encodeURIComponent(linkedProduct.title)}`}
-                    className="btn btn-sm"
-                    style={{
-                      background: 'linear-gradient(135deg,rgba(168,85,247,.15),rgba(99,102,241,.15))',
-                      border: '1px solid rgba(168,85,247,.4)',
-                      color: '#c084fc',
-                      fontSize: '0.82rem'
-                    }}
-                  >
-                    <Mail size={14} /> Teklif Al
-                  </a>
-                )}
+                <a
+                  href={buildWhatsAppQuoteUrl({ subject: linkedProduct ? linkedProduct.title : demo.title })}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-sm"
+                  style={{
+                    background: 'rgba(16, 185, 129, 0.16)',
+                    border: '1px solid rgba(16, 185, 129, 0.45)',
+                    color: '#34d399',
+                    fontSize: '0.82rem',
+                    fontWeight: 700
+                  }}
+                >
+                  <MessageCircle size={14} /> WhatsApp Teklif ({CUSTOMER_SUPPORT.phoneDisplay})
+                </a>
+                <a
+                  href={buildMailtoQuoteUrl({ subject: linkedProduct ? linkedProduct.title : demo.title })}
+                  className="btn btn-sm"
+                  style={{
+                    background: 'linear-gradient(135deg,rgba(168,85,247,.15),rgba(99,102,241,.15))',
+                    border: '1px solid rgba(168,85,247,.4)',
+                    color: '#c084fc',
+                    fontSize: '0.82rem'
+                  }}
+                >
+                  <Mail size={14} /> Mail ile Teklif Al
+                </a>
               </div>
             </div>
 

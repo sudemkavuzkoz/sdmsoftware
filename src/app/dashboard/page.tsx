@@ -11,18 +11,23 @@ import {
   ExternalLink,
   FileText,
   Globe,
+  Headphones,
   Key,
   KeyRound,
   Lock,
   LogIn,
+  Mail,
+  MessageCircle,
   Package,
   Palette,
+  Phone,
   ShieldCheck,
   Sparkles,
   UserPlus
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
+import { buildMailtoQuoteUrl, buildWhatsAppQuoteUrl, CUSTOMER_SUPPORT } from '@/lib/contact';
 import {
   downloadInvoiceDocument,
   downloadLicensePackage,
@@ -511,12 +516,31 @@ export default function CustomerDashboardPage() {
                     className="btn btn-primary btn-sm"
                     style={{ width: '100%' }}
                   >
-                    {plan.id === 'enterprise_license' ? 'IBAN / Havale ile Lisans Al →' : 'Sepete Ekle & IBAN ile Öde →'}
+                    Teklif İste &amp; Talep Oluştur →
                   </button>
                 )}
               </div>
             );
           })}
+          <div className="glass-card" style={{ gridColumn: '1 / -1', padding: '1.15rem 1.35rem', borderColor: 'rgba(16, 185, 129, 0.35)', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '0.9rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', fontSize: '0.84rem', color: 'var(--text-muted)' }}>
+              <Headphones size={18} color="#34d399" />
+              <span>
+                Web sitesinden ödeme yapılmaz. Doğrudan <strong style={{ color: 'var(--text-main)' }}>{CUSTOMER_SUPPORT.phoneDisplay}</strong> (WhatsApp) veya <strong style={{ color: 'var(--text-main)' }}>{CUSTOMER_SUPPORT.email}</strong> ile teklif verebilirsiniz.
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <a href={buildWhatsAppQuoteUrl({ subject: 'Üyelik & Lisans Teklifi', customerName: user.name, customerEmail: user.email })} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{ background: '#10b981', color: '#03150e', fontWeight: 800 }}>
+                <MessageCircle size={14} /> WhatsApp
+              </a>
+              <a href={buildMailtoQuoteUrl({ subject: 'Üyelik & Lisans Teklifi', customerName: user.name, customerEmail: user.email })} className="btn btn-secondary btn-sm">
+                <Mail size={14} /> Mail Gönder
+              </a>
+              <a href={CUSTOMER_SUPPORT.telHref} className="btn btn-secondary btn-sm">
+                <Phone size={14} /> Ara
+              </a>
+            </div>
+          </div>
         </div>
       )}
 
@@ -556,7 +580,7 @@ export default function CustomerDashboardPage() {
 
           {user.licenses.length === 0 ? (
             <div className="glass-card" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-              Henüz aktif lisans anahtarınız bulunmuyor. Üyelik planı seçebilir veya <Link href="/products" style={{ color: 'var(--primary)' }}>yazılım ürünleri</Link> sayfasından lisans satın alabilirsiniz.
+              Henüz aktif lisans anahtarınız bulunmuyor. Üyelik planı seçip teklif oluşturabilir veya <Link href="/products" style={{ color: 'var(--primary)' }}>yazılım ürünleri</Link> sayfasından teklif isteyebilirsiniz.
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: '1rem' }}>
@@ -568,7 +592,7 @@ export default function CustomerDashboardPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
                       <strong style={{ fontSize: '0.94rem' }}>{lic.productTitle}</strong>
                       <span className={`badge ${isPending ? 'badge-amber' : isRevoked ? 'badge-purple' : 'badge-emerald'}`} style={{ fontSize: '0.66rem' }}>
-                        {isPending ? 'Ödeme Onayı Bekleniyor' : isRevoked ? 'İptal Edildi' : 'Aktif'}
+                        {isPending ? 'Teklif Onayı Bekleniyor' : isRevoked ? 'İptal Edildi' : 'Aktif'}
                       </span>
                     </div>
                     <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
@@ -576,7 +600,7 @@ export default function CustomerDashboardPage() {
                     </div>
                     {isPending ? (
                       <div style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '8px', padding: '0.6rem 0.75rem', fontSize: '0.74rem', color: '#fde68a' }}>
-                        Havale / EFT ödemeniz yönetici tarafından onaylandığında lisans anahtarınız aktif edilecektir.
+                        Teklif talebiniz Müşteri Hizmetleri ({CUSTOMER_SUPPORT.phoneDisplay} / {CUSTOMER_SUPPORT.email}) onayı sonrasında aktif edilecektir.
                       </div>
                     ) : (
                       <>

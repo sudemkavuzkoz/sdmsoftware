@@ -29,23 +29,28 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    const paymentSettings = serverDb.getPaymentSettings();
-    if (body.paymentMethod === 'credit_card' && !paymentSettings.virtualPosEnabled) {
+    const requestedMethod = body.paymentMethod ?? 'quote_request';
+    if (requestedMethod !== 'quote_request') {
       return NextResponse.json(
         {
           success: false,
-          error: 'Kredi kartı / Sanal POS şu anda aktif değil. Lütfen Banka Havalesi / EFT / FAST yöntemini kullanınız.'
+          error:
+            'Web sitemiz üzerinden online ödeme alınmamaktadır. Teklif vermek için Müşteri Hizmetleri hattımızı kullanınız (WhatsApp: 0546 401 14 51 | Mail: sudemkavuzkoz005@gmail.com).'
         },
         { status: 400 }
       );
     }
 
     const authUser = await getAuthenticatedUser();
-    // Enforce server-side payment status when paying by wire_transfer
+    // Web checkout does not collect payments; quote requests always start pending admin approval
     const safePayload = {
       ...body,
-      paymentStatus: body.paymentMethod === 'wire_transfer' ? 'pending' : body.paymentStatus,
-      orderStatus: body.paymentMethod === 'wire_transfer' ? 'processing' : body.orderStatus
+      paymentMethod: 'quote_request' as const,
+      paymentStatus: 'pending' as const,
+      orderStatus: 'processing' as const,
+      proposedBudget:
+        typeof body.proposedBudget === 'string' ? body.proposedBudget.trim().slice(0, 120) || undefined : undefined,
+      quoteNote: typeof body.quoteNote === 'string' ? body.quoteNote.trim().slice(0, 1000) || undefined : undefined
     };
     const newOrder = serverDb.createOrder(safePayload, authUser?.id);
     const updatedUser = authUser ? serverDb.getUserById(authUser.id) : null;

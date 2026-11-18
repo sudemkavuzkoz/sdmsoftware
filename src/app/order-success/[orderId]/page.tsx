@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
@@ -11,8 +11,11 @@ import {
   Copy,
   Download,
   FileText,
+  Headphones,
   Key,
-  Landmark
+  Mail,
+  MessageCircle,
+  Phone
 } from 'lucide-react';
 import {
   downloadInvoiceDocument,
@@ -21,9 +24,13 @@ import {
   useOrders
 } from '@/lib/orderStorage';
 import { useAuth } from '@/context/AuthContext';
-import { PaymentSettings } from '@/lib/types';
+import {
+  buildMailtoQuoteUrl,
+  buildWhatsAppQuoteUrl,
+  CUSTOMER_SUPPORT
+} from '@/lib/contact';
 
-export default function OrderSuccessPage() {
+export default function QuoteSuccessPage() {
   const params = useParams();
   const orderId = params?.orderId as string;
   const clientOrders = useOrders();
@@ -34,24 +41,8 @@ export default function OrderSuccessPage() {
     (o) => o.id === orderId || o.orderNumber === orderId
   );
 
-  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null);
   const [copiedText, setCopiedText] = useState<string | null>(null);
   const [downloadNotice, setDownloadNotice] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    fetch('/api/settings/payment', { cache: 'no-store' })
-      .then((r) => r.json())
-      .then((data: { success?: boolean; settings?: PaymentSettings }) => {
-        if (active && data.success && data.settings) {
-          setPaymentSettings(data.settings);
-        }
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const handleCopy = (val: string) => {
     navigator.clipboard?.writeText(val);
@@ -62,19 +53,20 @@ export default function OrderSuccessPage() {
   if (isHydrated && !order) {
     return (
       <div className="container" style={{ paddingTop: '5rem', paddingBottom: '6rem' }}>
-        <div className="glass-card" style={{ maxWidth: '600px', margin: '0 auto', padding: '3rem 2rem', textAlign: 'center' }}>
+        <div className="glass-card" style={{ maxWidth: '620px', margin: '0 auto', padding: '3rem 2rem', textAlign: 'center' }}>
           <h1 style={{ fontSize: '1.7rem', fontWeight: 800, marginBottom: '0.75rem' }}>
-            Sipariş Kaydı Bulunamadı
+            Teklif / Talep Kaydı Bulunamadı
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', lineHeight: '1.6', marginBottom: '1.75rem' }}>
-            <strong>{orderId}</strong> numaralı sipariş kaydına bu oturumda ulaşılamadı. Geçmiş siparişlerinizi üye panelinizden kontrol edebilirsiniz.
+            <strong>{orderId}</strong> numaralı teklif kaydına bu oturumda ulaşılamadı. Geçmiş taleplerinizi müşteri panelinizden kontrol edebilir veya doğrudan{' '}
+            <strong>{CUSTOMER_SUPPORT.phoneDisplay}</strong> / <strong>{CUSTOMER_SUPPORT.email}</strong> üzerinden bizimle iletişime geçebilirsiniz.
           </p>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.85rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/dashboard" className="btn btn-primary btn-sm">
-              Üye Paneline Git
+              Müşteri Paneline Git
             </Link>
-            <Link href="/products" className="btn btn-secondary btn-sm">
-              Ürün Kataloğuna Dön
+            <Link href="/checkout" className="btn btn-secondary btn-sm">
+              Yeni Teklif Oluştur
             </Link>
           </div>
         </div>
@@ -82,7 +74,24 @@ export default function OrderSuccessPage() {
     );
   }
 
-  const isPendingTransfer = order?.paymentStatus === 'pending';
+  const isPendingApproval = order?.paymentStatus === 'pending';
+
+  const quoteParams = order
+    ? {
+        orderNumber: order.orderNumber,
+        customerName: order.customerName,
+        customerEmail: order.customerEmail,
+        customerPhone: order.customerPhone,
+        companyName: order.companyName,
+        proposedBudget: order.proposedBudget,
+        quoteNote: order.quoteNote,
+        items: order.items,
+        totalAmount: order.total
+      }
+    : { orderNumber: orderId };
+
+  const whatsappUrl = buildWhatsAppQuoteUrl(quoteParams);
+  const mailtoUrl = buildMailtoQuoteUrl(quoteParams);
 
   return (
     <div className="container" style={{ paddingTop: '3.5rem', paddingBottom: '6rem' }}>
@@ -95,43 +104,42 @@ export default function OrderSuccessPage() {
               width: '70px',
               height: '70px',
               borderRadius: '50%',
-              background: isPendingTransfer ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-              border: `1px solid ${isPendingTransfer ? 'rgba(245, 158, 11, 0.35)' : 'rgba(16, 185, 129, 0.3)'}`,
+              background: isPendingApproval ? 'rgba(0, 240, 255, 0.14)' : 'rgba(16, 185, 129, 0.15)',
+              border: `1px solid ${isPendingApproval ? 'rgba(0, 240, 255, 0.35)' : 'rgba(16, 185, 129, 0.3)'}`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto 1.5rem'
             }}
           >
-            {isPendingTransfer ? (
-              <Clock size={36} color="var(--accent-amber)" />
+            {isPendingApproval ? (
+              <Clock size={36} color="var(--primary)" />
             ) : (
               <CheckCircle2 size={38} color="var(--accent-emerald)" />
             )}
           </div>
 
-          <span className={`badge ${isPendingTransfer ? 'badge-amber' : 'badge-emerald'}`} style={{ marginBottom: '0.75rem' }}>
-            {isPendingTransfer ? 'HAVALE / EFT ÖDEMESİ BEKLENİYOR' : 'ÖDEME ONAYLANDI'}
+          <span className={`badge ${isPendingApproval ? 'badge-cyan' : 'badge-emerald'}`} style={{ marginBottom: '0.75rem' }}>
+            {isPendingApproval ? 'TEKLİF TALEBİ KAYDEDİLDİ — MÜŞTERİ HİZMETLERİ İLETİŞİMİ' : 'TEKLİF ONAYLANDI & LİSANS AKTİF'}
           </span>
           <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.75rem' }}>
-            {isPendingTransfer ? 'Siparişiniz Kaydedildi!' : 'Siparişiniz ve Lisansınız Aktif!'}
+            {isPendingApproval ? 'Teklif Talebiniz Alındı!' : 'Lisansınız ve Üyeliğiniz Aktif!'}
           </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', maxWidth: '560px', margin: '0 auto 1.5rem', lineHeight: '1.6' }}>
-            {isPendingTransfer ? (
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', maxWidth: '580px', margin: '0 auto 1.5rem', lineHeight: '1.6' }}>
+            {isPendingApproval ? (
               <>
-                Aşağıdaki banka hesabına açıklama kısmına sipariş numaranızı yazarak{' '}
-                <strong>{order?.total.toLocaleString('tr-TR')} ₺</strong> tutarındaki ödemeyi gerçekleştirdikten sonra yönetici onayıyla birlikte{' '}
-                <strong>{order?.customerEmail}</strong> hesabınızdaki lisanslar aktif edilir.
+                Web sitemiz üzerinden ödeme tahsilatı yapılmamaktadır. Aşağıdaki referans kodunuz ile Müşteri Hizmetleri hattımızdan (
+                <strong>WhatsApp: {CUSTOMER_SUPPORT.phoneDisplay}</strong> veya <strong>{CUSTOMER_SUPPORT.email}</strong>) teklif görüşmenizi hemen tamamlayabilirsiniz.
               </>
             ) : (
               <>
-                Ödemeniz onaylandı ve yazılım lisanslarınız <strong>{order?.customerEmail}</strong> hesabınıza aktif olarak tanımlandı.
+                Teklifiniz yönetici tarafından onaylandı ve yazılım lisanslarınız <strong>{order?.customerEmail}</strong> hesabınıza aktif olarak tanımlandı.
               </>
             )}
           </p>
 
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem', background: 'var(--bg-elevated)', padding: '0.6rem 1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', fontSize: '0.88rem' }}>
-            <span style={{ color: 'var(--text-muted)' }}>Sipariş No:</span>
+            <span style={{ color: 'var(--text-muted)' }}>Teklif Referans No:</span>
             <strong style={{ color: 'var(--primary)', fontFamily: 'var(--font-mono)' }}>
               {order?.orderNumber || orderId}
             </strong>
@@ -141,7 +149,7 @@ export default function OrderSuccessPage() {
                 onClick={() => handleCopy(order.orderNumber)}
                 className="btn btn-secondary btn-sm"
                 style={{ padding: '0.2rem 0.45rem', fontSize: '0.7rem' }}
-                title="Sipariş numarasını kopyala"
+                title="Referans numarasını kopyala"
               >
                 {copiedText === order.orderNumber ? <Check size={12} color="var(--accent-emerald)" /> : <Copy size={12} />}
               </button>
@@ -149,64 +157,76 @@ export default function OrderSuccessPage() {
           </div>
         </div>
 
-        {/* Pending Wire Transfer: Bank IBAN Card */}
-        {isPendingTransfer && (
-          <div className="glass-card" style={{ padding: '2rem', marginBottom: '2rem', borderColor: 'rgba(245, 158, 11, 0.35)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.1rem' }}>
-              <Landmark size={20} color="var(--accent-amber)" />
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Havale / EFT / FAST Banka Bilgileri</h2>
+        {/* Customer Service Action Card */}
+        {isPendingApproval && (
+          <div className="glass-card" style={{ padding: '2rem', marginBottom: '2rem', borderColor: 'rgba(0, 240, 255, 0.35)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
+              <Headphones size={20} color="var(--primary)" />
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Teklifi İletmek İçin Müşteri Hizmetlerine Bağlanın</h2>
             </div>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '1.25rem' }}>
+              Aşağıdaki butonlardan birine tıkladığınızda teklif kodunuz (<strong>{order?.orderNumber}</strong>), seçtiğiniz sistemler ve iletişim bilgileriniz otomatik olarak mesaj içine eklenir.
+            </p>
 
-            {paymentSettings?.iban ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem', fontSize: '0.86rem' }}>
-                  <div style={{ background: 'var(--bg-elevated)', padding: '0.8rem', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>Banka Adı</div>
-                    <strong style={{ color: 'var(--text-main)' }}>{paymentSettings.bankName || 'Belirtilmedi'}</strong>
-                  </div>
-                  <div style={{ background: 'var(--bg-elevated)', padding: '0.8rem', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>Alıcı Adı / Ünvanı</div>
-                    <strong style={{ color: 'var(--text-main)' }}>{paymentSettings.accountHolder || 'Belirtilmedi'}</strong>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', background: '#070b14', border: '1px solid rgba(0,240,255,0.25)', borderRadius: '10px', padding: '0.9rem 1rem' }}>
+            {(order?.proposedBudget || order?.quoteNote) && (
+              <div style={{ background: 'var(--bg-elevated)', borderRadius: '10px', padding: '0.9rem 1rem', marginBottom: '1.15rem', fontSize: '0.82rem', color: '#cbd5e1' }}>
+                {order.proposedBudget && (
                   <div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>Kopyalanabilir IBAN</div>
-                    <code style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--primary)', fontFamily: 'var(--font-mono)' }}>
-                      {paymentSettings.iban}
-                    </code>
+                    <strong style={{ color: 'var(--primary)' }}>Bütçe / Teklif Öneriniz:</strong> {order.proposedBudget}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(paymentSettings.iban.replace(/\s+/g, ''))}
-                    className="btn btn-primary btn-sm"
-                  >
-                    {copiedText === paymentSettings.iban.replace(/\s+/g, '') ? <Check size={14} /> : <Copy size={14} />}
-                    <span>{copiedText === paymentSettings.iban.replace(/\s+/g, '') ? 'IBAN Kopyalandı' : 'IBAN Kopyala'}</span>
-                  </button>
-                </div>
-
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
-                  Açıklama alanına <strong style={{ color: 'var(--primary)' }}>{order?.orderNumber}</strong> kodunu eklemeyi unutmayın.{' '}
-                  {paymentSettings.transferNote}
-                </div>
-              </div>
-            ) : (
-              <div style={{ fontSize: '0.86rem', color: 'var(--text-muted)' }}>
-                Banka IBAN bilgileri yönetici panelinden henüz eklenmemiştir. Siparişiniz kaydedilmiştir; ödeme hesabı bilgisi için{' '}
-                <strong>sudemkavuzkoz005@gmail.com</strong> adresi üzerinden iletişime geçebilirsiniz.
+                )}
+                {order.quoteNote && (
+                  <div style={{ marginTop: '0.25rem' }}>
+                    <strong style={{ color: 'var(--primary)' }}>Talep Notunuz:</strong> {order.quoteNote}
+                  </div>
+                )}
               </div>
             )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem' }}>
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn"
+                style={{
+                  background: '#10b981',
+                  color: '#03150e',
+                  fontWeight: 800,
+                  justifyContent: 'center'
+                }}
+              >
+                <MessageCircle size={17} />
+                <span>WhatsApp ile Gönder ({CUSTOMER_SUPPORT.phoneDisplay})</span>
+              </a>
+
+              <a
+                href={mailtoUrl}
+                className="btn btn-primary"
+                style={{ justifyContent: 'center' }}
+              >
+                <Mail size={16} />
+                <span>E-Posta ile Gönder ({CUSTOMER_SUPPORT.email})</span>
+              </a>
+
+              <a
+                href={CUSTOMER_SUPPORT.telHref}
+                className="btn btn-secondary"
+                style={{ justifyContent: 'center' }}
+              >
+                <Phone size={15} />
+                <span>Telefonla Ara ({CUSTOMER_SUPPORT.phoneDisplay})</span>
+              </a>
+            </div>
           </div>
         )}
 
-        {/* License Keys Section (only active once payment confirmed!) */}
+        {/* License Keys / Requested Packages Section */}
         <div className="glass-card" style={{ padding: '2rem', marginBottom: '2rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
             <Key size={20} color="var(--primary)" />
             <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>
-              {isPendingTransfer ? 'Sipariş Kapsamındaki Ürünler (Onay Bekliyor)' : 'Aktif Lisans Anahtarlarınız'}
+              {isPendingApproval ? 'Teklif İstenen Paketler (Görüşme & Onay Bekleniyor)' : 'Aktif Lisans Anahtarlarınız'}
             </h2>
           </div>
 
@@ -232,13 +252,15 @@ export default function OrderSuccessPage() {
                     <div>
                       <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{item.product.title}</div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--primary)', marginTop: '0.2rem' }}>
-                        Paket: {item.licenseTier.toUpperCase()} • {item.quantity} Adet
+                        {item.unitPrice > 0
+                          ? `Paket: ${item.licenseTier.toUpperCase()} • ${item.quantity} Adet • Liste: ${(item.unitPrice * item.quantity).toLocaleString('tr-TR')} ₺`
+                          : 'Özel Proje / Danışmanlık Teklif Talebi'}
                       </div>
                     </div>
 
-                    {isPendingTransfer ? (
+                    {isPendingApproval ? (
                       <span className="badge badge-amber" style={{ fontSize: '0.7rem' }}>
-                        Ödeme Onayı Sonrası Açılır
+                        Teklif Onayı Sonrası Açılır
                       </span>
                     ) : (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -261,7 +283,7 @@ export default function OrderSuccessPage() {
                 );
               })
             ) : (
-              <div style={{ color: 'var(--text-muted)' }}>Sipariş bilgileri yükleniyor...</div>
+              <div style={{ color: 'var(--text-muted)' }}>Talep bilgileri yükleniyor...</div>
             )}
           </div>
 
@@ -273,7 +295,7 @@ export default function OrderSuccessPage() {
 
           {order && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '1.75rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-subtle)' }}>
-              {!isPendingTransfer && (
+              {!isPendingApproval && (
                 <button
                   type="button"
                   onClick={() => {
@@ -292,13 +314,13 @@ export default function OrderSuccessPage() {
                 type="button"
                 onClick={() => {
                   downloadInvoiceDocument(order);
-                  setDownloadNotice('Sipariş & Fatura özeti indirildi.');
+                  setDownloadNotice('Teklif ve talep özeti indirildi.');
                 }}
                 className="btn btn-secondary btn-sm"
                 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
               >
                 <FileText size={15} />
-                <span>Sipariş Özeti İndir (HTML)</span>
+                <span>Teklif Özeti İndir (HTML)</span>
               </button>
             </div>
           )}
@@ -310,7 +332,7 @@ export default function OrderSuccessPage() {
           </Link>
 
           <Link href="/dashboard" className="btn btn-purple" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span>Üye Paneline Git</span>
+            <span>Müşteri Paneline Git</span>
             <ArrowRight size={16} />
           </Link>
         </div>

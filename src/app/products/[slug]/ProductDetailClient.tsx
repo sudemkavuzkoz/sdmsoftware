@@ -7,15 +7,18 @@ import {
   CheckCircle2,
   Star,
   ShoppingCart,
-  ShieldCheck,
-  Play,
+  Headphones,
   Download,
+  Play,
   ArrowLeft,
   Clock,
-  Check
+  Check,
+  MessageCircle,
+  Mail
 } from 'lucide-react';
 import { Product, DemoProject, LicenseTier } from '@/lib/types';
 import { useCart } from '@/context/CartContext';
+import { buildMailtoQuoteUrl, buildWhatsAppQuoteUrl, CUSTOMER_SUPPORT } from '@/lib/contact';
 import ProductCard from '@/components/ProductCard';
 import LiveDemoModal from '@/components/LiveDemoModal';
 
@@ -240,31 +243,78 @@ export default function ProductDetailClient({
               </div>
             </div>
 
-            {/* Fiyat Göstergesi ve Sepete Ekle Butonu */}
+            {/* Fiyat Göstergesi ve Teklif Butonları */}
             <div style={{ marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                <span style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>Ödenecek Tutar:</span>
+                <span style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>Liste Paket Tutarı:</span>
                 <span style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-main)' }}>
                   {getTierPrice(selectedTier).toLocaleString('tr-TR')} ₺
                 </span>
               </div>
 
-              <button
-                onClick={handleAddToCart}
-                className="btn btn-primary"
-                style={{
-                  width: '100%',
-                  padding: '0.9rem',
-                  fontSize: '1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.6rem'
-                }}
-              >
-                {added ? <Check size={18} /> : <ShoppingCart size={18} />}
-                <span>{added ? 'Sepete Eklendi!' : 'Sepete Ekle & Ödemeye Geç'}</span>
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                <a
+                  href={buildWhatsAppQuoteUrl({
+                    subject: `${product.title} (${selectedTier.toUpperCase()} Lisans)`
+                  })}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn"
+                  style={{
+                    width: '100%',
+                    padding: '0.85rem',
+                    fontSize: '0.96rem',
+                    background: '#10b981',
+                    color: '#03150e',
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem'
+                  }}
+                >
+                  <MessageCircle size={18} />
+                  <span>WhatsApp&apos;tan Teklif Ver ({CUSTOMER_SUPPORT.phoneDisplay})</span>
+                </a>
+
+                <a
+                  href={buildMailtoQuoteUrl({
+                    subject: `${product.title} (${selectedTier.toUpperCase()} Lisans)`
+                  })}
+                  className="btn btn-secondary"
+                  style={{
+                    width: '100%',
+                    padding: '0.8rem',
+                    fontSize: '0.92rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    borderColor: 'rgba(168, 85, 247, 0.45)',
+                    color: '#c084fc'
+                  }}
+                >
+                  <Mail size={16} />
+                  <span>Mail ile Teklif Al ({CUSTOMER_SUPPORT.email})</span>
+                </a>
+
+                <button
+                  onClick={handleAddToCart}
+                  className="btn btn-primary"
+                  style={{
+                    width: '100%',
+                    padding: '0.8rem',
+                    fontSize: '0.92rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.6rem'
+                  }}
+                >
+                  {added ? <Check size={18} /> : <ShoppingCart size={18} />}
+                  <span>{added ? 'Teklif Listesine Eklendi!' : 'Teklif Listesine Ekle & Form Oluştur'}</span>
+                </button>
+              </div>
             </div>
 
             {/* Canlı Demo Butonu (Eğer bu ürüne ait demo varsa) */}
@@ -289,19 +339,19 @@ export default function ProductDetailClient({
               </button>
             )}
 
-            {/* Güvenlik Rozetleri */}
+            {/* Müşteri Hizmetleri Güvence Rozetleri */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-subtle)', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <ShieldCheck size={15} color="var(--accent-emerald)" />
-                <span>Tek Seferlik Ödeme — Gizli Aylık Ücret Yok</span>
+                <Headphones size={15} color="var(--accent-emerald)" />
+                <span>Web Sitemizden Ödeme Alınmaz — Doğrudan Teklif İle İlerlenir</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Download size={15} color="var(--primary)" />
-                <span>Ödeme Onayından Sonra Anında Kaynak Kod & Lisans Teslimi</span>
+                <span>Teklif Onayından Sonra Kaynak Kod &amp; Lisans Teslimi</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Clock size={15} color="var(--accent-purple)" />
-                <span>6 Ay Ücretsiz Mühendislik & Güvenlik Güncellemeleri</span>
+                <span>6 Ay Ücretsiz Mühendislik &amp; Güvenlik Güncellemeleri</span>
               </div>
             </div>
           </div>

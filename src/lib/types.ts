@@ -70,10 +70,12 @@ export interface Order {
   subtotal: number;
   discount: number;
   total: number;
-  paymentMethod: 'credit_card' | 'iyzico' | 'stripe' | 'wire_transfer';
+  paymentMethod: 'credit_card' | 'iyzico' | 'stripe' | 'wire_transfer' | 'quote_request';
   paymentStatus: 'paid' | 'pending' | 'failed';
   orderStatus: 'completed' | 'processing' | 'refunded';
   transferReference?: string;
+  proposedBudget?: string;
+  quoteNote?: string;
   licenseKeys: { [productId: string]: string };
   createdAt: string;
 }
