@@ -16,7 +16,8 @@ export default function DemosPage() {
     { id: 'all', label: 'Tüm Canlı Demolar' },
     { id: 'travel_ai', label: 'AI Travel Planner' },
     { id: 'stock_prediction', label: 'Hisse Senedi Tahmini' },
-    { id: 'clinic_system', label: 'Klinik & Sağlık Sistemleri' }
+    { id: 'clinic_system', label: 'Klinik & Sağlık Sistemleri' },
+    { id: 'game', label: '2D Oyun & Simülasyon' }
   ];
 
   const filteredDemos = allDemos.filter(d => selectedCategory === 'all' || d.category === selectedCategory);
@@ -33,7 +34,7 @@ export default function DemosPage() {
           Geliştirdiğimiz Sistemlerin <span className="text-gradient">Canlı Vitrini</span>
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', lineHeight: '1.6' }}>
-          AI Travel Planner, Hisse Senedi Fiyat Tahmin Motoru, SDM Klinik, ADSP Protez Takip ve Veteriner Klinik sistemlerimizi tarayıcınızda canlı deneyimleyin.
+          GitHub repolarımızdan çekilen AI Travel Planner (200 ülke RAG &amp; Harita), Zaman Serisi Tahmin Mimarisi, ADSP Protez Takip, Pati Bahçesi ve Klinik sistemlerimizi tarayıcınızda canlı deneyimleyin.
         </p>
       </div>
 
@@ -82,7 +83,7 @@ export default function DemosPage() {
           </div>
 
           <a
-            href="mailto:iletisim@sdmsoftware.com.tr?subject=Ozel%20Demo%20Talebi"
+            href="mailto:sudemkavuzkoz005@gmail.com?subject=Ozel%20Demo%20Talebi"
             className="btn btn-secondary"
             style={{ whiteSpace: 'nowrap' }}
           >

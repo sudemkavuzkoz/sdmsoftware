@@ -249,7 +249,7 @@ export default function ProductCard({ product, onOpenDemo }: ProductCardProps) {
             ) : (
               /* Teklif Al Butonu - normal ürünler için */
               <a
-                href={`mailto:iletisim@sdmsoftware.com.tr?subject=Fiyat%20Teklifi%20-%20${encodeURIComponent(product.title)}&body=Merhaba%2C%0A%0A${encodeURIComponent(product.title)}%20i%C3%A7in%20fiyat%20teklifi%20almak%20istiyorum.%0A%0AAd%C4%B1m%3A%0A%C5%9Eirketim%3A%0ATelefon%3A`}
+                href={`mailto:sudemkavuzkoz005@gmail.com?subject=Fiyat%20Teklifi%20-%20${encodeURIComponent(product.title)}&body=Merhaba%2C%0A%0A${encodeURIComponent(product.title)}%20i%C3%A7in%20fiyat%20teklifi%20almak%20istiyorum.%0A%0AAd%C4%B1m%3A%0A%C5%9Eirketim%3A%0ATelefon%3A`}
                 className="btn btn-sm"
                 style={{
                   background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.18) 0%, rgba(99, 102, 241, 0.18) 100%)',

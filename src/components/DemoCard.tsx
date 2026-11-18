@@ -20,6 +20,8 @@ export default function DemoCard({ demo, onOpenDemo }: DemoCardProps) {
         return 'Borsa Tahmin & FinTech';
       case 'clinic_system':
         return 'Klinik & Sağlık';
+      case 'game':
+        return '2D Oyun & Simülasyon';
       case 'automation':
         return 'Kurumsal Otomasyon';
       case 'erp_crm':
@@ -39,8 +41,19 @@ export default function DemoCard({ demo, onOpenDemo }: DemoCardProps) {
     <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div className="glow-accent" />
 
-      {/* Görsel ve Canlı Gösterge */}
-      <div style={{ position: 'relative', height: '220px', overflow: 'hidden', background: '#090d16' }}>
+      {/* Görsel ve Canlı Gösterge (Tıklayınca direkt demoyu aç) */}
+      <div
+        onClick={() => onOpenDemo(demo)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onOpenDemo(demo);
+          }
+        }}
+        style={{ position: 'relative', height: '220px', overflow: 'hidden', background: '#090d16', cursor: 'pointer' }}
+      >
         <Image
           src={demo.imageUrl}
           alt={demo.title}

@@ -16,7 +16,9 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/db';
 import { persistClientOrder } from '@/lib/orderStorage';
-import { Order } from '@/lib/types';
+import { DemoProject, Order } from '@/lib/types';
+import DemoCard from '@/components/DemoCard';
+import LiveDemoModal from '@/components/LiveDemoModal';
 
 type PendingOrderData = Omit<Order, 'id' | 'orderNumber' | 'createdAt' | 'licenseKeys'>;
 
@@ -48,6 +50,8 @@ export default function CheckoutPage() {
   const [smsCode, setSmsCode] = useState('192837');
   const [isProcessing, setIsProcessing] = useState(false);
   const [tempOrderData, setTempOrderData] = useState<PendingOrderData | null>(null);
+  const [selectedDemo, setSelectedDemo] = useState<DemoProject | null>(null);
+  const allDemos = db.getDemos();
 
   useEffect(() => {
     if (!is3DSecureOpen) return;
@@ -128,12 +132,39 @@ export default function CheckoutPage() {
 
   if (items.length === 0) {
     return (
-      <div className="container" style={{ padding: '6rem 1.5rem', textAlign: 'center' }}>
-        <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '1rem' }}>Sepetiniz Boş</h2>
-        <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Ödeme yapabilmek için sepetinizde ürün bulunmalıdır.</p>
-        <Link href="/products" className="btn btn-primary">
-          Ürünleri İncele
-        </Link>
+      <div className="container" style={{ paddingTop: '4rem', paddingBottom: '5rem' }}>
+        <div className="glass-card" style={{ padding: '3rem 1.5rem', textAlign: 'center', marginBottom: '3.5rem' }}>
+          <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '0.75rem' }}>Sepetiniz Boş</h2>
+          <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+            Ödeme yapabilmek için sepetinizde ürün bulunmalıdır. Öncesinde gerçek çalışan sistem demolarımızı doğrudan deneyimleyebilirsiniz.
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.85rem', justifyContent: 'center' }}>
+            <Link href="/products" className="btn btn-primary">
+              Ürünleri İncele
+            </Link>
+            <Link href="/demos" className="btn btn-secondary">
+              Tüm Canlı Demoları Gör
+            </Link>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '1.75rem' }}>
+          <div className="live-indicator" style={{ marginBottom: '0.4rem' }}>
+            <span className="live-dot" />
+            <span>GITHUB REPOLARINDAN CANLI SİSTEM DEMOLARI</span>
+          </div>
+          <h3 style={{ fontSize: '1.65rem', fontWeight: 800 }}>
+            Satın Almadan Önce <span className="text-gradient">Gerçek Demoları Deneyin</span>
+          </h3>
+        </div>
+
+        <div className="grid-cols-3">
+          {allDemos.map((demo) => (
+            <DemoCard key={demo.id} demo={demo} onOpenDemo={(d) => setSelectedDemo(d)} />
+          ))}
+        </div>
+
+        <LiveDemoModal demo={selectedDemo} onClose={() => setSelectedDemo(null)} />
       </div>
     );
   }
@@ -370,7 +401,7 @@ export default function CheckoutPage() {
             ) : (
               <div style={{ background: 'var(--bg-elevated)', padding: '1.25rem', borderRadius: 'var(--radius-md)', fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: '1.6' }}>
                 <div><strong>Alıcı:</strong> SDM Software Yazılım Çözümleri</div>
-                <div><strong>İletişim & Fatura Onayı:</strong> iletisim@sdmsoftware.com.tr</div>
+                <div><strong>İletişim & Fatura Onayı:</strong> sudemkavuzkoz005@gmail.com</div>
                 <div style={{ marginTop: '0.5rem', fontSize: '0.78rem', color: 'var(--accent-amber)' }}>
                   * Kurumsal Havale / EFT talebi oluşturulduktan sonra üretilen sipariş numaranızı ödeme açıklamasına ekleyebilirsiniz; fatura ve IBAN detayları destek ekibimizce teyit edilir.
                 </div>

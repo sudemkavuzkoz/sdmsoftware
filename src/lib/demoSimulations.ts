@@ -113,4 +113,5 @@ export const KNOWN_DEMO_SLUGS = [
   'sdm-clinic-system-demo',
   'protez-takip-sistemi-demo',
   'veteriner-klinik-demo',
+  'pati-bahcesi-demo',
 ] as const;

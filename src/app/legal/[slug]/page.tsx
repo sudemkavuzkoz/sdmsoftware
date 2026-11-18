@@ -29,7 +29,7 @@ const LEGAL_DOCS: Record<string, LegalDoc> = {
       },
       {
         heading: '3. İlgili Kişinin Hakları',
-        body: 'KVKK Madde 11 kapsamındaki bilgi talep etme, düzeltme, silme ve itiraz haklarınız için iletisim@sdmsoftware.com.tr adresi üzerinden bizimle her zaman iletişime geçebilirsiniz.'
+        body: 'KVKK Madde 11 kapsamındaki bilgi talep etme, düzeltme, silme ve itiraz haklarınız için sudemkavuzkoz005@gmail.com adresi üzerinden bizimle her zaman iletişime geçebilirsiniz.'
       }
     ]
   },
@@ -71,7 +71,7 @@ const LEGAL_DOCS: Record<string, LegalDoc> = {
       },
       {
         heading: '3. İletişim ve Güvenlik',
-        body: 'Tüm sayfa ve veri trafiği HTTPS / TLS şifreleme katmanı üzerinden iletilir. Sorularınız için iletisim@sdmsoftware.com.tr adresine ulaşabilirsiniz.'
+        body: 'Tüm sayfa ve veri trafiği HTTPS / TLS şifreleme katmanı üzerinden iletilir. Sorularınız için sudemkavuzkoz005@gmail.com adresine ulaşabilirsiniz.'
       }
     ]
   },
@@ -187,7 +187,7 @@ export default async function LegalPage({
             <ShieldCheck size={16} color="var(--accent-emerald)" />
             <span>SDM Software Hukuk & Uyumluluk Bilgilendirmesi</span>
           </div>
-          <a href="mailto:iletisim@sdmsoftware.com.tr" className="btn btn-secondary btn-sm">
+          <a href="mailto:sudemkavuzkoz005@gmail.com" className="btn btn-secondary btn-sm">
             <Mail size={14} /> İletişime Geç
           </a>
         </div>

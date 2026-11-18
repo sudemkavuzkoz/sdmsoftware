@@ -133,19 +133,20 @@ const INITIAL_PRODUCTS: Product[] = [
 const INITIAL_DEMOS: DemoProject[] = [
   {
     id: 'demo-travel-ai',
-    title: 'AI Travel Planner Canlı Rota Simülatörü',
+    title: 'AI Travel Planner — Dünya Haritası & RAG Asistanı',
     slug: 'ai-travel-planner-demo',
     category: 'travel_ai',
-    shortDescription: 'Şehir, bütçe ve gün seçerek yapay zekanın saniyeler içinde ürettiği interaktif saatlik seyahat planını canlı deneyimleyin.',
-    fullDescription: 'Bu demoda, istediğiniz bir destinasyonu seçip yapay zekaya anlık seyahat rotası çizdirebilir, bütçe optimizasyonunu inceleyebilir ve önerilen gezilecek yerler listesini canlı test edebilirsiniz.',
+    shortDescription: 'AI-TRAVEL-PLANNER reposundaki 200 ülke/şehir belgesi, interaktif dünya haritası ve RAG kaynak kanıt motorunu canlı test edin.',
+    fullDescription: 'GitHub reposundan çekilen 200 destinasyon rehberi (travel_data), koordinat veritabanı ve world_famous_places_2024 veri seti üzerinde çalışan gerçek harita + RAG seyahat asistanı. Haritadan bir pin seçin, soru sorun, kaynak satır kanıtları ve Google Maps rotalarıyla yanıt alın.',
     features: [
-      'İnteraktif şehir ve tatil süresi seçimi',
-      'Yapay zeka anlık gezi rotası üretimi',
-      'Tahmini bütçe ve konaklama maliyet hesabı',
-      'İlgi alanına göre filtreleme (Kültür, Doğa, Gastronomi)'
+      '200 ülke ve şehir için interaktif Leaflet dünya haritası pinleri',
+      'Gerçek travel_data belgeleri üzerinden RAG kaynak araması ve satır kanıtı',
+      'UNESCO ve ünlü mekanlar kataloğu ile Google Maps rota bağlantıları',
+      'Günlük saatlik gezi planı ve Türkçe/İngilizce anlık sorgulama'
     ],
-    techStack: ['Next.js 16', 'OpenAI Models', 'Mapbox', 'Tailwind/CSS'],
-    liveUrl: '/demos/ai-travel-planner-demo',
+    techStack: ['Leaflet Map', 'RAG Vector/Keyword Search', 'Python Corpus', 'Next.js 16'],
+    liveUrl: '/live/ai-travel-planner-demo',
+    githubUrl: 'https://github.com/sudemkavuzkoz/AI-TRAVEL-PLANNER',
     previewType: 'interactive_sandbox',
     status: 'active',
     viewsCount: 3120,
@@ -160,19 +161,20 @@ const INITIAL_DEMOS: DemoProject[] = [
   },
   {
     id: 'demo-stock-ai',
-    title: 'StockPred AI - BIST & Global Hisse Fiyat Tahmin Paneli',
+    title: 'StockPred AI — Zaman Serisi Tahmin & Benchmark Motoru',
     slug: 'stock-price-prediction-demo',
     category: 'stock_prediction',
-    shortDescription: 'THYAO, ASELS, AAPL ve NVDA hisselerinin LSTM derin öğrenme tahmin eğrilerini ve teknik sinyallerini canlı test edin.',
-    fullDescription: 'Derin öğrenme modelleriyle eğitilmiş finansal analiz motorumuzun canlı arayüzüdür. Hisse seçip anlık tahmin eğrisini, RSI/MACD göstergelerini ve haber duygu analizi skorlarını gerçek zamanlı inceleyebilirsiniz.',
+    shortDescription: 'Şirketinizin günlük hisse CSV/JSON verisini yükleyerek 5 modelden 10 günlük projeksiyon & stratejik tavsiye alın; MSFT/NVDA benchmarklarını inceleyin.',
+    fullDescription: 'Zaman-Serisi-Tahmin-Sistemi-Mimarisi reposundan çekilen 2015–2025 arası 2.746 günlük MSFT/NVDA verileri ve 296 test koşumuna ek olarak; şirketlerin kendi günlük hisse senedi CSV/JSON dosyalarını yükleyip anlık model backtesti, 10 iş günlük projeksiyon ve risk/momentum tavsiyeleri alabildiği canlı tahmin platformu.',
     features: [
-      'BIST & Global hisse simülasyon seçimi (THYAO, ASELS, AAPL)',
-      '1 Hafta ve 1 Aylık yapay zeka fiyat projeksiyon eğrisi',
-      'KAP & Finansal haber duygu analizi puanı (%88 Pozitif)',
-      'Al / Tut / Sat sinyal güvenilirlik yüzdesi'
+      'Şirketlere özel CSV/JSON hisse verisi yükleme, örnek şablon indirme & anlık analiz',
+      'CNN-LSTM, GRU, LSTM, XGBoost, ARIMA walk-forward test skorları ve stratejik tavsiye raporu',
+      'MSFT ve NVDA 2015–2025 gerçek tarihsel fiyat ve teknik indikatör (RSI-14, MACD, Vol20) serileri',
+      '10 iş günlük projeksiyon grafiği, eğitim kaybı ve EDA analiz çıktıları'
     ],
-    techStack: ['PyTorch', 'FastAPI', 'Next.js', 'Recharts', 'Redis'],
-    liveUrl: '/demos/stock-price-prediction-demo',
+    techStack: ['PyTorch LSTM/GRU', 'XGBoost', 'Scikit-Learn', 'Next.js 16'],
+    liveUrl: '/live/stock-price-prediction-demo',
+    githubUrl: 'https://github.com/sudemkavuzkoz/Zaman-Serisi-Tahmin-Sistemi-Mimarisi',
     previewType: 'dashboard_simulation',
     status: 'active',
     viewsCount: 4280,
@@ -186,47 +188,21 @@ const INITIAL_DEMOS: DemoProject[] = [
     imageUrl: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=800&q=80'
   },
   {
-    id: 'demo-clinic-sys',
-    title: 'SDM Klinik - Canlı Randevu & Hasta Takip Demosu',
-    slug: 'sdm-clinic-system-demo',
-    category: 'clinic_system',
-    shortDescription: 'Doktor takvimi, hasta kartı oluşturma, randevu ekleme ve SMS bilgilendirme akışını canlı deneyimleyin.',
-    fullDescription: 'Poliklinikler, özel klinikler ve diş hekimleri için hazırlanan bu canlı demoda takvim üzerinden yeni hasta randevusu oluşturabilir, SMS onayını simüle edebilir ve hasta geçmişi arayüzünü test edebilirsiniz.',
-    features: [
-      'İnteraktif hekim takvimi ve saat seçimi',
-      'Hasta kabul ve yeni randevu kartı oluşturma',
-      'Otomatik SMS ve WhatsApp bildirim simülasyonu',
-      'Branş bazlı poliklinik randevu akışı'
-    ],
-    techStack: ['Next.js 16', 'TypeScript', 'PostgreSQL', 'Twilio API'],
-    liveUrl: '/demos/sdm-clinic-system-demo',
-    previewType: 'interactive_sandbox',
-    status: 'active',
-    viewsCount: 2650,
-    likesCount: 680,
-    credentials: {
-      user: 'doktor@sdmsoftware.com.tr',
-      pass: 'clinic2026',
-      role: 'Başhekim / Klinik Yöneticisi'
-    },
-    productSlug: 'sdm-clinic-management-system',
-    imageUrl: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=800&q=80'
-  },
-  {
     id: 'demo-protez-adsp',
-    title: 'ADSP Protez Takip Sistemi Canlı Vercel Demosu',
+    title: 'ADSP Protez Takip Sistemi — Klinik & Laboratuvar Kanban',
     slug: 'protez-takip-sistemi-demo',
     category: 'clinic_system',
-    shortDescription: 'Ağız ve Diş Sağlığı Merkezi protez üretim, aşama onay ve teslimat sürecini canlı Vercel uygulamasında test edin.',
-    fullDescription: 'Diş hekimliği ve diş protez laboratuvar süreçlerini dijitalleştiren bu sistemde hekim protez siparişi girer, laboratuvar teknisyeni aşamaları (metal prova, porselen prova, teslimat vb.) günceller.',
+    shortDescription: 'protez-takip-sistemi-adsp reposundaki gerçek Klinik Hekim & Laboratuvar Teknisyen Kanban panosunu, yarın teslim uyarılarını ve işlem kronolojisini deneyimleyin.',
+    fullDescription: 'GitHub reposundan çekilen Kadir Kurt ADSP Protez Takip Sistemi: Konvansiyonel (8 aşamalı) ve Dijital (8 aşamalı) iş akışları, hekim vaka oluşturma, teknisyen aşama ilerletme, VITA renk skalası ve vaka kronolojisi.',
     features: [
-      'Canlı Vercel üzerinde 7/24 test edilebilir sistem',
-      'Hekim ve laboratuvar rolleri ile gerçek zamanlı iş akışı',
-      'Aşama bazlı durum takibi (Beklemede, Hazırlanıyor, Teslim Edildi)',
-      'Mobil ve masaüstü uyumlu modern responsive tasarım'
+      'Klinik (Hekim) ve Laboratuvar (Teknisyen) rol panelleri',
+      'Konvansiyonel ve Dijital 8 aşamalı dinamik Kanban iş akışı',
+      'Yarın teslim edilecek vakalar için otomatik acil uyarı bandı',
+      'Vaka detay çekmecesi ve canlı işlem kronolojisi (ActionTimeline)'
     ],
-    techStack: ['Next.js', 'TypeScript', 'Vercel Deployment'],
-    liveUrl: 'https://protez-takip-sistemi-adsp.vercel.app',
+    techStack: ['Next.js 16', 'TypeScript', 'Zod Schema', 'Vercel Deployment'],
+    liveUrl: 'https://protez-takip-sistemi-adsp.vercel.app/dashboard/clinic',
+    githubUrl: 'https://github.com/sudemkavuzkoz/protez-takip-sistemi-adsp',
     previewType: 'interactive_sandbox',
     status: 'active',
     viewsCount: 3890,
@@ -240,20 +216,71 @@ const INITIAL_DEMOS: DemoProject[] = [
     imageUrl: 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&w=800&q=80'
   },
   {
+    id: 'demo-pati-bahcesi',
+    title: 'Pati Bahçesi — 2D Sevimli Evcil Hayvan Dünyası',
+    slug: 'pati-bahcesi-demo',
+    category: 'game',
+    shortDescription: 'Pati-Bah-esi reposundan doğrudan çekilen 2D evcil hayvan bakım, görev, mini oyun ve barınak simülasyonunu tarayıcınızda canlı oynayın.',
+    fullDescription: 'GitHub reposundan eksiksiz çekilen HTML5/CSS3/JS Cozy Pet Sanctuary uygulaması. 8 farklı evcil hayvan türü, bağımsız uyku/XP ilerleme sistemi, kendi hayvanını tasarlama stüdyosu, Pati Dükkanı ve Lezzet Yağmuru mini oyunu içerir.',
+    features: [
+      '8 farklı vektörel 2D evcil hayvan ve özel hayvan tasarlama stüdyosu',
+      'Bağımsız tokluk, mutluluk, enerji, temizlik, XP ve uyku mekaniği',
+      'Lezzet Yağmuru canvas mini oyunu, görevler ve Pati Dükkanı',
+      'Web Audio ses efektleri ve yerel tarayıcı kayıt desteği'
+    ],
+    techStack: ['HTML5 Canvas', 'CSS3', 'JavaScript', 'Procedural SVG'],
+    liveUrl: '/demos/pati-bahcesi/index.html',
+    githubUrl: 'https://github.com/sudemkavuzkoz/Pati-Bah-esi',
+    previewType: 'iframe',
+    status: 'active',
+    viewsCount: 1940,
+    likesCount: 610,
+    imageUrl: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80'
+  },
+  {
+    id: 'demo-clinic-sys',
+    title: 'SDM Klinik — Canlı Randevu & Hasta Takip Demosu',
+    slug: 'sdm-clinic-system-demo',
+    category: 'clinic_system',
+    shortDescription: 'Doktor takvimi, hasta kartı oluşturma, randevu ekleme ve SMS bilgilendirme akışını canlı deneyimleyin.',
+    fullDescription: 'Poliklinikler, özel klinikler ve diş hekimleri için hazırlanan bu canlı demoda takvim üzerinden yeni hasta randevusu oluşturabilir, SMS onayını simüle edebilir ve hasta geçmişi arayüzünü test edebilirsiniz.',
+    features: [
+      'İnteraktif hekim takvimi ve saat seçimi',
+      'Hasta kabul ve yeni randevu kartı oluşturma',
+      'Otomatik SMS ve WhatsApp bildirim simülasyonu',
+      'Branş bazlı poliklinik randevu akışı'
+    ],
+    techStack: ['Next.js 16', 'TypeScript', 'PostgreSQL', 'Twilio API'],
+    liveUrl: '/live/sdm-clinic-system-demo',
+    githubUrl: 'https://github.com/sudemkavuzkoz/Dental-Clinik',
+    previewType: 'interactive_sandbox',
+    status: 'active',
+    viewsCount: 2650,
+    likesCount: 680,
+    credentials: {
+      user: 'doktor@sdmsoftware.com.tr',
+      pass: 'clinic2026',
+      role: 'Başhekim / Klinik Yöneticisi'
+    },
+    productSlug: 'sdm-clinic-management-system',
+    imageUrl: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=800&q=80'
+  },
+  {
     id: 'demo-veteriner-sys',
     title: 'Veteriner Klinik Randevu & Muayene Demosu',
     slug: 'veteriner-klinik-demo',
     category: 'clinic_system',
-    shortDescription: 'Pet sahibi randevu alımı ve veteriner hekim onay/muayene notu akışını canlı deneyimleyin.',
-    fullDescription: 'Evcil hayvan sahiplerinin online randevu oluşturduğu ve veteriner hekimlerin muayene notları ve aşı kayıtları eklediği açık kaynak klinik yönetim paneli.',
+    shortDescription: 'Pet sahibi randevu alımı, veteriner hekim onay/iptal kontrolleri ve muayene sonrası tıbbi not ekleme akışını canlı deneyimleyin.',
+    fullDescription: 'Evcil hayvan sahiplerinin online randevu oluşturduğu, veteriner hekimlerin randevuları onaylayıp iptal edebildiği ve muayene sonrası detaylı tıbbi muayene notu ekleyebildiği interaktif klinik yönetim paneli.',
     features: [
       'Hasta/Evcil hayvan randevu alma akışı',
-      'Veteriner hekim panelinden onay ve iptal kontrolleri',
-      'Muayene sonu not ve reçete ekleme simülasyonu',
-      'Kapsamlı aşı ve tedavi takip modülü'
+      'Veteriner hekim panelinden onay, iptal ve muayene başlatma kontrolleri',
+      'Muayene sonu tıbbi teşhis ve not ekleme/düzenleme modülü',
+      'Canlı randevu ve muayene durum istatistikleri'
     ],
-    techStack: ['React', 'TypeScript', 'Node.js'],
-    liveUrl: 'https://github.com/sudemkavuzkoz/Veteriner-Klinik-Sistemi',
+    techStack: ['React', 'TypeScript', 'Next.js 16'],
+    liveUrl: '/live/veteriner-klinik-demo',
+    githubUrl: 'https://github.com/sudemkavuzkoz/Veteriner-Klinik-Sistemi',
     previewType: 'interactive_sandbox',
     status: 'active',
     viewsCount: 2150,

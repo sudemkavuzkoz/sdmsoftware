@@ -224,7 +224,7 @@ export default function HomePage() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <a
-                  href="mailto:iletisim@sdmsoftware.com.tr?subject=Ozel%20Yazilim%20Teklifi"
+                  href="mailto:sudemkavuzkoz005@gmail.com?subject=Ozel%20Yazilim%20Teklifi"
                   className="btn btn-primary btn-lg"
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
                 >

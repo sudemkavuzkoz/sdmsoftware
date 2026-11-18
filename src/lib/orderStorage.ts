@@ -138,7 +138,7 @@ export function downloadLicensePackage(order: Order, singleProductId?: string) {
     '2. .env dosyanızda SDM_LICENSE_KEY alanına yukarıdaki anahtarı ekleyin.',
     '3. Üretim derlemesi alın: npm run build && npm start',
     '',
-    'Teknik Destek: iletisim@sdmsoftware.com.tr | https://sdmsoftware.com.tr',
+    'Teknik Destek: sudemkavuzkoz005@gmail.com | https://sdmsoftware.com.tr',
     '============================================================'
   ];
 
@@ -190,7 +190,7 @@ export function downloadInvoiceDocument(order: Order) {
   <div class="header">
     <div>
       <h1 style="margin:0;">SDM SOFTWARE</h1>
-      <p style="margin:4px 0 0;color:#475569;">sdmsoftware.com.tr • iletisim@sdmsoftware.com.tr</p>
+      <p style="margin:4px 0 0;color:#475569;">sdmsoftware.com.tr • sudemkavuzkoz005@gmail.com</p>
     </div>
     <div style="text-align:right;">
       <strong>E-FATURA ÖZET BELGESİ</strong><br />

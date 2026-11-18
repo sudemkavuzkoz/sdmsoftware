@@ -50,10 +50,10 @@ export default function Footer() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Mail size={14} color="var(--primary)" />
                 <a
-                  href="mailto:iletisim@sdmsoftware.com.tr"
+                  href="mailto:sudemkavuzkoz005@gmail.com"
                   style={{ color: 'var(--text-main)', textDecoration: 'underline', textUnderlineOffset: '3px' }}
                 >
-                  iletisim@sdmsoftware.com.tr
+                  sudemkavuzkoz005@gmail.com
                 </a>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -70,33 +70,34 @@ export default function Footer() {
             </h4>
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
               <li>
-                <Link href="/products" style={{ transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--primary)')} onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}>
-                  AI Travel Planner (Python AI Rota)
+                <Link href="/demos/ai-travel-planner-demo" style={{ transition: 'color 0.2s' }}>
+                  AI Travel Planner (RAG &amp; Harita)
                 </Link>
               </li>
               <li>
-                <a href="https://protez-takip-sistemi-adsp.vercel.app" target="_blank" rel="noopener noreferrer" style={{ transition: 'color 0.2s', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }} onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--primary)')} onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}>
-                  <span>ADSP Protez Takip Sistemi</span>
-                  <ExternalLink size={12} />
-                </a>
+                <Link href="/demos/protez-takip-sistemi-demo" style={{ transition: 'color 0.2s' }}>
+                  ADSP Protez Takip Sistemi
+                </Link>
               </li>
               <li>
-                <a href="https://github.com/sudemkavuzkoz/Veteriner-Klinik-Sistemi" target="_blank" rel="noopener noreferrer" style={{ transition: 'color 0.2s', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }} onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--primary)')} onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}>
-                  <span>Veteriner Randevu & Klinik Sistemi</span>
-                  <ExternalLink size={12} />
-                </a>
+                <Link href="/demos/stock-price-prediction-demo" style={{ transition: 'color 0.2s' }}>
+                  Zaman Serisi Tahmin Mimarisi
+                </Link>
               </li>
               <li>
-                <a href="https://github.com/sudemkavuzkoz/Dental-Clinik" target="_blank" rel="noopener noreferrer" style={{ transition: 'color 0.2s', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }} onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--primary)')} onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}>
-                  <span>Dental Klinik Muayenehane Portalı</span>
-                  <ExternalLink size={12} />
-                </a>
+                <Link href="/demos/pati-bahcesi-demo" style={{ transition: 'color 0.2s' }}>
+                  Pati Bahçesi (2D Evcil Hayvan Dünyası)
+                </Link>
               </li>
               <li>
-                <a href="https://github.com/sudemkavuzkoz/Zaman-Serisi-Tahmin-Sistemi-Mimarisi" target="_blank" rel="noopener noreferrer" style={{ transition: 'color 0.2s', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }} onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--primary)')} onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}>
-                  <span>Zaman Serisi Tahmin Mimarisi</span>
-                  <ExternalLink size={12} />
-                </a>
+                <Link href="/demos/veteriner-klinik-demo" style={{ transition: 'color 0.2s' }}>
+                  Veteriner Randevu &amp; Klinik Sistemi
+                </Link>
+              </li>
+              <li>
+                <Link href="/demos/sdm-clinic-system-demo" style={{ transition: 'color 0.2s' }}>
+                  Dental Klinik Muayenehane Portalı
+                </Link>
               </li>
             </ul>
           </div>
@@ -108,29 +109,35 @@ export default function Footer() {
             </h4>
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
               <li>
-                <a href="https://protez-takip-sistemi-adsp.vercel.app" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                <a href="https://protez-takip-sistemi-adsp.vercel.app/dashboard/clinic" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
                   <span>Protez Takip Canlı Vercel Demosu</span>
                   <ExternalLink size={13} />
                 </a>
               </li>
               <li>
-                <Link href="/demos" style={{ transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--primary)')} onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}>
-                  AI Travel Planner Rota Simülatörü
+                <Link href="/live/ai-travel-planner-demo" style={{ transition: 'color 0.2s' }}>
+                  AI Travel Planner Tam Ekran Demo
                 </Link>
               </li>
               <li>
-                <Link href="/demos" style={{ transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--primary)')} onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}>
-                  Hisse Senedi & Zaman Serisi Paneli
+                <Link href="/live/stock-price-prediction-demo" style={{ transition: 'color 0.2s' }}>
+                  Hisse Senedi &amp; Zaman Serisi Paneli
                 </Link>
               </li>
               <li>
-                <Link href="/demos" style={{ transition: 'color 0.2s' }} onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--primary)')} onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}>
-                  Klinik & Hekim Randevu Masası
+                <a href="/demos/pati-bahcesi/index.html" target="_blank" rel="noopener noreferrer" style={{ transition: 'color 0.2s', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <span>Pati Bahçesi Canlı Oyun</span>
+                  <ExternalLink size={12} />
+                </a>
+              </li>
+              <li>
+                <Link href="/demos/sdm-clinic-system-demo" style={{ transition: 'color 0.2s' }}>
+                  Klinik &amp; Hekim Randevu Masası
                 </Link>
               </li>
               <li>
                 <a href="https://github.com/sudemkavuzkoz?tab=repositories" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-purple)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
-                  <span>GitHub Repoları & Kodlar →</span>
+                  <span>GitHub Repoları &amp; Kodlar →</span>
                   <ExternalLink size={13} />
                 </a>
               </li>

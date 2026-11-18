@@ -25,7 +25,7 @@ export interface Product {
   version: string;
 }
 
-export type DemoCategory = 'travel_ai' | 'stock_prediction' | 'clinic_system' | 'erp_crm' | 'ai_bot' | 'fintech' | 'b2b' | 'automation';
+export type DemoCategory = 'travel_ai' | 'stock_prediction' | 'clinic_system' | 'game' | 'erp_crm' | 'ai_bot' | 'fintech' | 'b2b' | 'automation';
 
 export interface DemoProject {
   id: string;
@@ -37,6 +37,7 @@ export interface DemoProject {
   features: string[];
   techStack: string[];
   liveUrl?: string;
+  githubUrl?: string;
   previewType: 'interactive_sandbox' | 'iframe' | 'dashboard_simulation';
   status: 'active' | 'beta' | 'maintenance';
   viewsCount: number;

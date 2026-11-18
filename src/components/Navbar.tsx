@@ -341,7 +341,7 @@ export default function Navbar() {
       )}
 
       <style jsx>{`
-        @media (max-width: 768px) {
+        @media (max-width: 1024px) {
           :global(.desktop-menu) {
             display: none !important;
           }
